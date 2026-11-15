@@ -3,6 +3,7 @@ import '../core/store.js';
 import '../core/crypto.js';
 import '../core/sync.js';
 import '../core/spring.js';
+import '../core/days.js';
 // Интерфейс.
 
   const S = MS.store;
