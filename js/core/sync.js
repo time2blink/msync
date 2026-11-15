@@ -159,10 +159,12 @@ import './history.js';
     return changed;
   }
 
+  let lastRun = 0; // когда последний раз реально синхронизировались
   async function now() {
     if (!configured()) { state.status = 'off'; notify(false); return; }
     if (state.busy) { state.again = true; return; }
     state.busy = true;
+    lastRun = Date.now();
     state.status = 'syncing';
     notify(false);
     let changed = false;
@@ -201,10 +203,13 @@ import './history.js';
   function notify(changed) { if (MS.onSync) MS.onSync(changed); }
 
   let timer = 0;
+  // Не чаще раза в минуту. Иначе каждая пауза при наборе давала бы отдельный коммит в репозиторий с данными.
+  const MIN_GAP_MS = 60000;
   function schedule() {
     if (!configured()) return;
     clearTimeout(timer);
-    timer = setTimeout(now, 4000);
+    const wait = Math.max(4000, lastRun + MIN_GAP_MS - Date.now());
+    timer = setTimeout(now, wait);
   }
 
   MS.sync = { state, configured, now, schedule, putBinary, getBinary };
