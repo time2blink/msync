@@ -775,7 +775,18 @@ h1, h2, h3 { text-wrap: balance; }
 .cards { display: flex; flex-direction: column; gap: 0.5rem; }
 .card { background: var(--surface); border-radius: 12px; padding: 0.6rem 0.7rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .card .t-body { padding: 0; font-weight: 500; overflow-wrap: anywhere; }
-.card-move { display: flex; gap: 0.25rem; justify-content: flex-end; }
+.card-move { display: flex; gap: 0.4rem; justify-content: space-between; flex-wrap: wrap; }
+/* Перенос между статусами: подписи вместо безымянных стрелок, видно куда задача уйдёт. */
+.move-btn {
+  display: inline-flex; align-items: center; gap: 0.3rem; height: 2rem; padding: 0 0.7rem;
+  border-radius: 999px; background: var(--hover); color: var(--text-2);
+  font-size: 0.85rem; font-weight: 600; line-height: 1; white-space: nowrap;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease-out;
+}
+.move-btn .ico { width: 14px; height: 14px; }
+@media (hover: hover) { .move-btn:hover { background: var(--tint-strong); color: var(--accent-text); } }
+.move-btn:not(:disabled):active { transform: scale(0.96); }
+.move-btn:focus-visible { outline-offset: 2px; }
 @media (max-width: 760px) { .board { grid-template-columns: 1fr; } }
 
 .tagbar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
@@ -803,8 +814,8 @@ h1, h2, h3 { text-wrap: balance; }
   padding: 0 0.45rem; border-radius: 999px; font-size: 0.7rem; line-height: 1.25rem; font-weight: 700;
   background: var(--danger); color: #fff;
 }
-/* Зачёркнутый номер красным: день выходной виден даже без метки. Сегодняшний кружок не трогаем. */
-.cell.off .num { color: var(--danger); font-weight: 700; text-decoration: line-through; text-decoration-thickness: 2px; }
+/* Номер выходного красным, без зачёркивания. Сегодняшний кружок не трогаем. */
+.cell.off .num { color: var(--danger); font-weight: 700; }
 .cell.off.today .num { color: #fff; text-decoration: none; }
 
 /* Прошлый месяц приглушён, текущий выделен рамкой, будущий обычный. */

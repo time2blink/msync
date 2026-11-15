@@ -383,14 +383,15 @@ import '../core/time.js';
   function boardView(doc) {
     const all = tasksOf(doc);
     return `<div class="board">${F().STATUSES.map(([st, name]) => {
+      const S = F().STATUSES, i = S.findIndex(([s]) => s === st);
       const rows = all.filter((t) => F().statusOf(t) === st).sort((a, b) => (a.order || 0) - (b.order || 0));
       return `<section class="col"><header class="list-head"><h3>${name}</h3><span class="count">${rows.length}</span></header>
         <ul class="cards">${rows.map((t) => `
           <li class="card" data-id="${t.id}">
             <button class="t-body" data-act="open">${esc(t.title)}</button>
             <div class="card-move">
-              ${st !== 'todo' ? `<button class="icon-btn" data-act="move-status" data-to="${st === 'done' ? 'doing' : 'todo'}" aria-label="Назад">${icon('left', 14)}</button>` : ''}
-              ${st !== 'done' ? `<button class="icon-btn" data-act="move-status" data-to="${st === 'todo' ? 'doing' : 'done'}" aria-label="Дальше">${icon('right', 14)}</button>` : ''}
+              ${st !== 'todo' ? `<button class="move-btn" data-act="move-status" data-to="${S[i - 1][0]}" aria-label="Вернуть в «${S[i - 1][1]}»">${icon('left', 14)}<span>${S[i - 1][1]}</span></button>` : ''}
+              ${st !== 'done' ? `<button class="move-btn" data-act="move-status" data-to="${S[i + 1][0]}" aria-label="Перенести в «${S[i + 1][1]}»"><span>${S[i + 1][1]}</span>${icon('right', 14)}</button>` : ''}
             </div>
           </li>`).join('')}</ul></section>`;
     }).join('')}</div>`;
