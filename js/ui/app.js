@@ -1008,6 +1008,15 @@ import '../core/time.js';
     return list.map((t) => `<div class="hist-row"><span>${esc(t.name)} · задач: ${t.lines.length}</span></div>`).join('');
   }
 
+  // Размер интерфейса: S меньше, M по умолчанию, L и XL крупнее. Хранится в браузере.
+  const SIZES = [['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']];
+  const readSize = () => { try { return localStorage.getItem('msync-size') || 'm'; } catch { return 'm'; } };
+  function setSize(id) {
+    try { if (id === 'm') localStorage.removeItem('msync-size'); else localStorage.setItem('msync-size', id); } catch { /* без хранилища размер действует до перезагрузки */ }
+    if (id === 'm') delete document.documentElement.dataset.size;
+    else document.documentElement.dataset.size = id;
+  }
+
   function settingsSheet() {
     const gh = MS.cfg.gh || {};
     openSheet(`
@@ -1015,6 +1024,10 @@ import '../core/time.js';
       <h3>Оформление</h3>
       <div class="theme-grid" id="theme-grid" role="group" aria-label="Тема оформления">
         ${THEMES.map(([id, n, c]) => `<button type="button" class="theme-card ${readTheme() === id ? 'on' : ''}" data-theme-set="${id}" aria-pressed="${readTheme() === id}" style="--pb:${c[0]};--ps:${c[1]};--pt:${c[2]};--pa:${c[3]}"><span class="theme-prev"><i></i><b></b></span><span class="theme-name">${n}</span></button>`).join('')}
+      </div>
+      <h3>Размер</h3>
+      <div class="seg size-seg" id="size-seg" role="group" aria-label="Размер интерфейса">
+        ${SIZES.map(([id, n]) => `<button type="button" class="${readSize() === id ? 'on' : ''}" data-size-set="${id}" aria-pressed="${readSize() === id}">${n}</button>`).join('')}
       </div>
       <h3>Синхронизация через GitHub</h3>
       <p class="hint">Нужен приватный репозиторий и токен fine-grained с доступом только к нему (право Contents: Read and write). Токен хранится в этом браузере.</p>
@@ -1045,6 +1058,16 @@ import '../core/time.js';
       <p class="hint">Текущая работа в файл .md: задачи по спискам и заметки.</p>
       <div class="sheet-foot"><button class="btn" id="md-space">Скачать работу в .md</button></div>`,
     (sh) => {
+      $('#size-seg', sh).addEventListener('click', (e) => {
+        const b = e.target.closest('[data-size-set]');
+        if (!b) return;
+        setSize(b.dataset.sizeSet);
+        $$('[data-size-set]', sh).forEach((x) => {
+          const on = x === b;
+          x.classList.toggle('on', on);
+          x.setAttribute('aria-pressed', String(on));
+        });
+      });
       $('#theme-grid', sh).addEventListener('click', (e) => {
         const b = e.target.closest('[data-theme-set]');
         if (!b) return;

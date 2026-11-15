@@ -76,9 +76,14 @@
 /* ---------- основа ---------- */
 * { box-sizing: border-box; }
 
+/* Размер интерфейса: всё построено на rem, поэтому масштаб задаёт корневой размер шрифта.
+   M — по умолчанию (как было), S — меньше, L и XL — крупнее. Выбор хранится в браузере. */
 html {
   font: 100%/1.47 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable', 'Segoe UI', system-ui, Roboto, sans-serif;
 }
+html[data-size='s'] { font-size: 90%; }
+html[data-size='l'] { font-size: 120%; }
+html[data-size='xl'] { font-size: 140%; }
 
 body {
   margin: 0;
@@ -741,7 +746,7 @@ input, textarea { caret-color: var(--accent); }
 /* Полосы прокрутки везде (страница, шторка, поле заметки) берут цвет из текущей темы.
    Chrome и Safari: ::-webkit-scrollbar (толще, скруглённый бегунок, без системных стрелок).
    Firefox: стандартные свойства. Chrome их не получает, иначе они перебьют ::-webkit-scrollbar. */
-::-webkit-scrollbar { width: 14px; height: 14px; }
+::-webkit-scrollbar { width: 16px; height: 16px; }
 ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--text) 40%, transparent);
@@ -752,7 +757,7 @@ input, textarea { caret-color: var(--accent); }
 .sidebar::-webkit-scrollbar { display: none; }
 @supports (-moz-appearance: none) {
   html, * {
-    scrollbar-width: thin;
+    scrollbar-width: auto;
     scrollbar-color: color-mix(in srgb, var(--text) 42%, transparent) transparent;
   }
 }

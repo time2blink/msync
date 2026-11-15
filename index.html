@@ -15,7 +15,9 @@
     var t = localStorage.getItem('msync-theme');
     var known = ['light', 'dark', 'rose-dawn', 'rose-pine', 'nord', 'dracula', 'tokyo-night'];
     if (known.indexOf(t) >= 0) document.documentElement.dataset.theme = t;
-  } catch (e) { /* хранилища нет: тема по системе */ }
+    var z = localStorage.getItem('msync-size');
+    if (['s', 'l', 'xl'].indexOf(z) >= 0) document.documentElement.dataset.size = z;
+  } catch (e) { /* хранилища нет: тема по системе, размер M */ }
 </script>
 </head>
 <body>
