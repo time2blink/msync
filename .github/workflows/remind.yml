@@ -1,0 +1,27 @@
+name: Напоминания в Telegram
+
+on:
+  schedule:
+    # Каждый день в 06:00 UTC. Время можно поменять здесь (cron в UTC).
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Отправить напоминание
+        run: node scripts/remind.mjs
+        env:
+          DATA_REPO: ${{ vars.DATA_REPO }}
+          TZ_NAME: ${{ vars.TZ_NAME }}
+          DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
