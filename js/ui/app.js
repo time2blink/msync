@@ -1126,7 +1126,16 @@ import '../core/time.js';
       }
     });
 
-    $('#search').addEventListener('input', (e) => { query = e.target.value.trim(); renderSide(); renderMain(); });
+    // Поиск перерисовывает колонку не на каждую букву, а через 150 мс после последней.
+    let searchTimer = 0;
+    $('#search').addEventListener('input', (e) => {
+      const v = e.target.value.trim();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        if ($('#search').value.trim() !== v) return; // поле уже очистили или поменяли
+        query = v; renderSide(); renderMain();
+      }, 150);
+    });
 
     const c = $('#content');
     c.addEventListener('click', (e) => {

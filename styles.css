@@ -147,7 +147,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .space.on .dot { background: #fff; transform: scale(0.7); }
 .space.on .lockdot { color: #fff; transform: none; }
 .space-edit { opacity: 0.7; padding: 4px; margin: -4px; border-radius: 6px; }
-.space-edit:hover { opacity: 1; background: rgba(255, 255, 255, 0.22); }
+@media (hover: hover) { .space-edit:hover { opacity: 1; background: rgba(255, 255, 255, 0.22); } }
 .add-space { color: var(--text-3); }
 
 .view .ico { color: var(--text-3); transition: color 180ms ease; }
@@ -527,7 +527,6 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
   display: flex; align-items: center; gap: 0.9rem;
   padding: 0.6rem 0.7rem 0.6rem 1rem; border-radius: 18px;
   background: color-mix(in srgb, var(--text) 90%, transparent); color: var(--bg); font-size: 0.92rem;
-  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
   box-shadow: var(--shadow-float);
   opacity: 0; pointer-events: none; transform: translate(-50%, 14px) scale(0.97);
   transition: opacity 200ms ease, transform 340ms var(--ease);
@@ -780,10 +779,19 @@ h1, h2, h3 { text-wrap: balance; }
 @media (max-width: 760px) { .board { grid-template-columns: 1fr; } }
 
 .tagbar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
-.tagchip { padding: 0.3rem 0.6rem; border-radius: 999px; background: var(--tint-strong); color: var(--accent-text); }
+.tagchip { padding: 0.3rem 0.6rem; border-radius: 999px; background: var(--tint-strong); color: var(--accent-text); transition: transform 150ms ease-out; }
+.tagchip:not(:disabled):active { transform: scale(0.96); }
 .tagchip.open { background: var(--accent); color: #fff; }
 
-.cell.off { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); }
+/* Выходной: заметный фон и метка «вых» в углу, чтобы было видно и без цвета. */
+.cell.off { position: relative; background: color-mix(in srgb, var(--accent) 20%, var(--surface)); }
+.cell.off::before {
+  content: 'вых'; position: absolute; top: 0.4rem; right: 0.4rem; z-index: 1;
+  padding: 0 0.4rem; border-radius: 999px; font-size: 0.68rem; line-height: 1.25rem; font-weight: 600;
+  background: var(--accent); color: #fff;
+}
+.cell.off .num { color: var(--accent-text); font-weight: 600; }
+@media (max-width: 760px) { .cell.off::before { font-size: 0; width: 0.5rem; height: 0.5rem; padding: 0; top: 0.35rem; right: 0.35rem; } }
 .offdays { background: var(--surface); border-radius: 14px; padding: 0.8rem; margin: 0 0 1.4rem; }
 .off-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.7rem; }
 .off-import { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; }
@@ -817,9 +825,12 @@ h1, h2, h3 { text-wrap: balance; }
 .toc-item { text-align: left; color: var(--text-2); padding: 0.15rem 0; font-size: 0.9rem; }
 .toc-item.l2 { padding-left: 0.8rem; }
 .toc-item.l3 { padding-left: 1.6rem; }
-.toc-item:hover { color: var(--accent-text); }
+.toc-item { transition: transform 150ms ease-out, color 180ms ease; }
+.toc-item:not(:disabled):active { transform: scale(0.96); }
+@media (hover: hover) { .toc-item:hover { color: var(--accent-text); } }
 
-.md-img { display: block; max-width: 100%; height: auto; border-radius: 12px; margin: 0.6rem 0; background: var(--hover); min-height: 3rem; }
+/* Контур картинки: чёрный 10% на светлых темах, белый 10% на тёмных. --text в каждой теме как раз такой. */
+.md-img { display: block; max-width: 100%; height: auto; border-radius: 12px; margin: 0.6rem 0; background: var(--hover); min-height: 3rem; outline: 1px solid color-mix(in srgb, var(--text) 10%, transparent); outline-offset: -1px; }
 .timer-btn.on { color: var(--accent-text); font-weight: 600; }
 .timebox { background: var(--surface); border-radius: 14px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
 .timebox h3 { font-size: 0.95rem; margin-bottom: 0.4rem; }
