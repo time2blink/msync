@@ -790,15 +790,22 @@ h1, h2, h3 { text-wrap: balance; }
 .tagchip:not(:disabled):active { transform: scale(0.96); }
 .tagchip.open { background: var(--accent); color: #fff; }
 
-/* Выходной: заметный фон и метка «вых» в углу, чтобы было видно и без цвета. */
-.cell.off { position: relative; background: color-mix(in srgb, var(--accent) 20%, var(--surface)); }
+/* Выходной: нейтральная штриховка без цвета, поэтому не спорит со списками (они сплошные акценты).
+   Метка «вых» нейтральная, серая. Выбранный день подсвечивается кольцом, а не фоном. */
+.cell.off {
+  position: relative;
+  background:
+    repeating-linear-gradient(-45deg, transparent 0 7px, color-mix(in srgb, var(--text) 7%, transparent) 7px 8px),
+    var(--surface);
+}
 .cell.off::before {
   content: 'вых'; position: absolute; top: 0.4rem; right: 0.4rem; z-index: 1;
-  padding: 0 0.4rem; border-radius: 999px; font-size: 0.68rem; line-height: 1.25rem; font-weight: 600;
-  background: var(--accent); color: #fff;
+  padding: 0 0.4rem; border-radius: 999px; font-size: 0.66rem; line-height: 1.2rem; font-weight: 600;
+  background: var(--hover); color: var(--text-2);
 }
-.cell.off .num { color: var(--accent-text); font-weight: 600; }
-@media (max-width: 760px) { .cell.off::before { font-size: 0; width: 0.5rem; height: 0.5rem; padding: 0; top: 0.35rem; right: 0.35rem; } }
+.cell.off:not(.today) .num { color: var(--text-2); }
+.cell.sel { background: var(--tint); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 70%, transparent); }
+@media (max-width: 760px) { .cell.off::before { font-size: 0; width: 0.45rem; height: 0.45rem; padding: 0; top: 0.35rem; right: 0.35rem; background: var(--text-3); } }
 .offdays { background: var(--surface); border-radius: 14px; padding: 0.8rem; margin: 0 0 1.4rem; }
 .off-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.7rem; }
 .off-import { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; }
