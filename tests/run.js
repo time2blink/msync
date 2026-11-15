@@ -35,9 +35,14 @@ function runSuite(file) {
   });
 }
 
+server.on('error', (e) => {
+  console.error(`Порт ${PORT} занят предыдущим запуском (${e.code}). Закройте процесс node в диспетчере задач и запустите снова.`);
+  process.exit(1);
+});
+
 server.listen(PORT, '127.0.0.1', async () => {
   let failed = false;
-  for (const suite of ['test.js', 'test2.js', 'test3.js', 'test4.js', 'test5.js', 'test6.js', 'test7.js']) {
+  for (const suite of ['test.js', 'test2.js', 'test3.js', 'test4.js', 'test5.js', 'test6.js', 'test7.js', 'test8.js']) {
     const { code, out } = await runSuite(suite);
     console.log(`\n== ${suite} ==\n${out}`);
     if (code !== 0 || /FAIL|CRASH/.test(out)) failed = true;

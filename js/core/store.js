@@ -1,5 +1,5 @@
 import { MS } from './state.js';
-import { history } from './history.js';
+import { history, mergeTables } from './history.js';
 // Данные, локальное хранение и слияние версий.
 
 const LS = { data: 'ms:data', cfg: 'ms:cfg', meta: 'ms:meta', vault: 'ms:vault' };
@@ -72,6 +72,7 @@ function merge(a, b) {
     const x = ai[id], y = bi[id];
     out.items[id] = !x ? y : !y ? x : newer(y, x) ? y : x;
   }
+  if (a.hist || b.hist) out.hist = mergeTables(a.hist, b.hist); // история сейфа
   for (const t of [a.updatedAt, b.updatedAt, out.handoff.updatedAt, ...Object.values(out.items).map((i) => i.updatedAt)]) observe(t || 0);
   return out;
 }
