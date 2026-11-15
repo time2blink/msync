@@ -1,8 +1,6 @@
 // Оболочка приложения: сначала сеть (чтобы обновления приходили сразу), без сети — из кэша.
-const CACHE = 'msync-shell-v2';
-const SHELL = ['./', 'index.html', 'styles.css', 'icon.svg', 'manifest.webmanifest',
-  'js/core/state.js', 'js/core/store.js', 'js/core/crypto.js', 'js/core/sync.js', 'js/core/spring.js',
-  'js/ui/app.js'];
+const CACHE = 'msync-shell-v3';
+const SHELL = ['./', 'index.html', 'styles.css', 'icon.svg', 'manifest.webmanifest', 'js/core/crypto.js', 'js/core/days.js', 'js/core/features.js', 'js/core/history.js', 'js/core/spring.js', 'js/core/state.js', 'js/core/store.js', 'js/core/sync.js', 'js/ui/app.js'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
