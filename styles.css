@@ -14,7 +14,7 @@
   --surface: #ffffff;
   --text: #1d1d1f;
   --text-2: #5f5f66;
-  --text-3: #8e8e93;
+  --text-3: #6e6e73; /* 4.5:1 и больше на белом и на фоне: мелкий текст */
   --line: rgba(60, 60, 67, 0.13);
   --hover: rgba(120, 120, 128, 0.1);
   --danger: #d70015;
@@ -59,7 +59,7 @@
   --surface: #1c1c1e;
   --text: #f5f5f7;
   --text-2: #a1a1a6;
-  --text-3: #6e6e73;
+  --text-3: #8e8e93; /* 4.5:1 и больше на поверхности: мелкий текст */
   --line: rgba(84, 84, 88, 0.55);
   --hover: rgba(120, 120, 128, 0.22);
   --danger: #ff453a;
@@ -146,8 +146,15 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .space.on { background: var(--c); color: #fff; font-weight: 600; }
 .space.on .dot { background: #fff; transform: scale(0.7); }
 .space.on .lockdot { color: #fff; transform: none; }
-.space-edit { opacity: 0.7; padding: 4px; margin: -4px; border-radius: 6px; }
-@media (hover: hover) { .space-edit:hover { opacity: 1; background: rgba(255, 255, 255, 0.22); } }
+/* Спейс и карандаш — два отдельных элемента: кнопка рядом с пилюлей, а не внутри неё. */
+.space-row { display: flex; align-items: center; gap: 0.2rem; }
+.space-row > .space { flex: 1; min-width: 0; }
+.space-edit {
+  display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; border-radius: 8px;
+  color: var(--text-3); transition: background-color 150ms ease, color 150ms ease, transform 150ms ease-out;
+}
+@media (hover: hover) { .space-edit:hover { background: var(--hover); color: var(--text); } }
+.space-edit:not(:disabled):active { transform: scale(0.96); }
 .add-space { color: var(--text-3); }
 
 .view .ico { color: var(--text-3); transition: color 180ms ease; }
@@ -346,7 +353,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .add-sub { display: flex; align-items: center; gap: 0.15rem; }
 .add-plus.small { width: 1.9rem; height: 1.9rem; }
 .add-sub:focus-within .add-plus { color: var(--accent); }
-.add-sub input { flex: 1; min-width: 0; height: 1.9rem; border: 0; background: none; outline: none; font-size: 0.93rem; }
+.add-sub input { flex: 1; min-width: 0; height: 1.9rem; border: 0; background: none; outline: none; font-size: 1rem; }
 .add-sub input::placeholder { color: var(--text-3); }
 .t-title { display: block; font-size: 1rem; letter-spacing: -0.011em; overflow-wrap: anywhere; transition: color 200ms; }
 .is-done .t-title, .sub.is-done > span { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--text-3); }

@@ -101,10 +101,9 @@ import '../core/time.js';
     const sp = S.spaces();
     $('#spaces').innerHTML =
       sp.map((d) => `
-        <button class="space ${d.id === MS.cfg.space ? 'on' : ''}" data-space="${d.id}" style="--c:${esc(d.color)}">
+        <div class="space-row"><button class="space ${d.id === MS.cfg.space ? 'on' : ''}" data-space="${d.id}" style="--c:${esc(d.color)}">
           <span class="dot"></span><span class="space-name">${esc(d.name)}</span>
-          ${d.id === MS.cfg.space ? `<span class="space-edit" data-edit-space="${d.id}" role="button" aria-label="Изменить спейс" title="Изменить спейс">${icon('edit', 15)}</span>` : ''}
-        </button>`).join('') +
+        </button>${d.id === MS.cfg.space ? `<button class="space-edit" data-edit-space="${d.id}" aria-label="Изменить спейс «${esc(d.name)}»" title="Изменить спейс">${icon('edit', 15)}</button>` : ''}</div>`).join('') +
       `<button class="space ${isVault() ? 'on' : ''}" data-space="${MS.VAULT}" style="--c:${MS.VAULT_COLOR}">
           <span class="dot lockdot">${icon(MS.vault ? 'unlock' : 'lock', 14)}</span><span class="space-name">Сейф</span>
         </button>
@@ -172,7 +171,7 @@ import '../core/time.js';
         </div>
         ${opts.plain ? '' : `
         <button class="pin" data-act="pin" aria-label="${t.pinned ? 'Открепить' : 'Закрепить'}" title="${t.pinned ? 'Открепить' : 'Закрепить'}">${icon('star', 17)}</button>
-        <span class="grip" data-grip title="Перетащить">${icon('grip', 16)}</span>`}
+        <span class="grip" data-grip role="button" tabindex="0" aria-label="Переставить задачу. Стрелки вверх и вниз" title="Перетащить или переставить стрелками">${icon('grip', 16)}</span>`}
         ${open ? `
         <div class="t-subs ${justOpened === t.id ? 'opening' : ''}">
           <ul>${subs.map((s, n) => `
@@ -596,8 +595,8 @@ import '../core/time.js';
           <span class="gate-ico">${icon('lock', 28)}</span>
           <h2>Создайте сейф</h2>
           <p>Записи шифруются на этом устройстве, на GitHub уходит только шифр. Мастер-пароль нигде не хранится и не восстанавливается: забудете его — содержимое сейфа будет потеряно.</p>
-          <input type="password" name="p1" placeholder="Мастер-пароль: фраза из 4–5 слов" autocomplete="new-password" required minlength="10">
-          <input type="password" name="p2" placeholder="Повторите мастер-пароль" autocomplete="new-password" required>
+          <input type="password" name="p1" aria-label="Мастер-пароль" placeholder="Мастер-пароль: фраза из 4–5 слов" autocomplete="new-password" required minlength="10">
+          <input type="password" name="p2" aria-label="Повторите мастер-пароль" placeholder="Повторите мастер-пароль" autocomplete="new-password" required>
           <p class="gate-err" id="gate-err"></p>
           <button class="btn primary big">Создать сейф</button>
         </form>`;
@@ -606,7 +605,7 @@ import '../core/time.js';
       <form class="gate" data-gate="unlock">
         <span class="gate-ico">${icon('lock', 28)}</span>
         <h2>Сейф заблокирован</h2>
-        <input type="password" name="p1" placeholder="Мастер-пароль" autocomplete="current-password" required>
+        <input type="password" name="p1" aria-label="Мастер-пароль" placeholder="Мастер-пароль" autocomplete="current-password" required>
         <p class="gate-err" id="gate-err"></p>
         <button class="btn primary big">Открыть сейф</button>
       </form>`;
@@ -659,17 +658,30 @@ import '../core/time.js';
     const sh = $('#sheet');
     sh.innerHTML = `<button class="icon-btn sheet-x" data-close aria-label="Закрыть">${icon('x', 18)}</button>${html}`;
     sheetClose = onClose || null;
+    // Запоминаем, откуда открыли, и делаем фон недоступным, пока открыто окно.
+    sheetOpener = document.activeElement;
     document.body.classList.add('sheet-open');
+    const shell = $('.app'); if (shell) shell.inert = true;
     if (onMount) onMount(sh);
     const f = $('[autofocus]', sh);
     if (f) setTimeout(() => f.focus(), 30);
   }
+  let sheetOpener = null;
   function closeSheet() {
     if (!document.body.classList.contains('sheet-open')) return;
     document.body.classList.remove('sheet-open');
+    const shell = $('.app'); if (shell) shell.inert = false;
     const fn = sheetClose;
     sheetClose = null;
-    if (fn) fn();
+    const back = sheetOpener; sheetOpener = null;
+    if (fn) fn(); // onClose обычно перерисовывает экран
+    // Фокус возвращаем туда, откуда открывали. Если перерисовка заменила элемент, ищем новый по его data-атрибуту.
+    let target = back && back.isConnected ? back : null;
+    if (!target && back) {
+      const a = [...back.attributes].find((x) => x.name.startsWith('data-'));
+      if (a) target = document.querySelector(`[${a.name}="${CSS.escape(a.value)}"]`);
+    }
+    if (target && typeof target.focus === 'function') target.focus();
   }
 
   function taskSheet(id) {
@@ -789,14 +801,14 @@ import '../core/time.js';
         <button class="on" data-mode="edit">Править</button><button data-mode="read">Читать</button>
       </div>
       <div class="md-tools" id="ns-tools" role="toolbar" aria-label="Оформление текста">
-        <button type="button" data-md="bold" title="Жирный (Ctrl+B)"><b>B</b></button>
-        <button type="button" data-md="italic" title="Курсив (Ctrl+I)"><i>I</i></button>
-        <button type="button" data-md="h" title="Заголовок">H</button>
-        <button type="button" data-md="list" title="Список">•</button>
-        <button type="button" data-md="check" title="Чек-бокс">☐</button>
+        <button type="button" data-md="bold" aria-label="Жирный" title="Жирный (Ctrl+B)"><b>B</b></button>
+        <button type="button" data-md="italic" aria-label="Курсив" title="Курсив (Ctrl+I)"><i>I</i></button>
+        <button type="button" data-md="h" aria-label="Заголовок" title="Заголовок">H</button>
+        <button type="button" data-md="list" aria-label="Список" title="Список">•</button>
+        <button type="button" data-md="check" aria-label="Чек-бокс" title="Чек-бокс">☐</button>
         <button type="button" data-md="link" title="Ссылка" aria-label="Ссылка">${icon('link', 18)}</button>
-        <button type="button" data-md="code" title="Код">{ }</button>
-        <button type="button" data-md="wiki" title="Ссылка на заметку [[...]]">[[ ]]</button>
+        <button type="button" data-md="code" aria-label="Код" title="Код">{ }</button>
+        <button type="button" data-md="wiki" aria-label="Ссылка на заметку" title="Ссылка на заметку [[...]]">[[ ]]</button>
       </div>
       <textarea id="ns-body" class="tall" rows="12" placeholder="Текст заметки. Можно Markdown: # заголовок, - список, **жирный**, [ссылка](https://...)">${esc(n.body)}</textarea>
       <div class="md-view" id="ns-view" hidden></div>
@@ -1344,6 +1356,24 @@ import '../core/time.js';
     });
 
     c.addEventListener('keydown', (e) => {
+      // Порядок задач с клавиатуры: стрелки на ручке переставляют задачу в своём списке.
+      if (e.target.matches && e.target.matches('[data-grip]') && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        e.preventDefault();
+        const li = e.target.closest('.task');
+        const sib = e.key === 'ArrowUp' ? li.previousElementSibling : li.nextElementSibling;
+        if (!sib || !sib.classList.contains('task')) return;
+        const doc = cur();
+        const ids = [...li.parentElement.children].map((r) => r.dataset.id);
+        const i = ids.indexOf(li.dataset.id), j = ids.indexOf(sib.dataset.id);
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+        ids.forEach((id, n) => {
+          const t = doc.items[id];
+          if (t && t.order !== n + 1) { t.order = n + 1; S.put(doc, t); }
+        });
+        focusAfter = `[data-id="${li.dataset.id}"] [data-grip]`;
+        render();
+        return;
+      }
       if (e.key === 'Enter' && e.target.dataset.listName) e.target.blur();
       if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset.day) { calDay = e.target.dataset.day; renderMain(); }
     });
