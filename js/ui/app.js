@@ -36,6 +36,7 @@ import '../core/time.js';
     right: '<path d="M9.5 6l6 6-6 6"/>',
     grip: '<circle cx="9" cy="6" r="1.3" fill="currentColor"/><circle cx="15" cy="6" r="1.3" fill="currentColor"/><circle cx="9" cy="12" r="1.3" fill="currentColor"/><circle cx="15" cy="12" r="1.3" fill="currentColor"/><circle cx="9" cy="18" r="1.3" fill="currentColor"/><circle cx="15" cy="18" r="1.3" fill="currentColor"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   };
   const icon = (n, size = 20) =>
     `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
@@ -790,7 +791,7 @@ import '../core/time.js';
         <button type="button" data-md="h" title="Заголовок">H</button>
         <button type="button" data-md="list" title="Список">•</button>
         <button type="button" data-md="check" title="Чек-бокс">☐</button>
-        <button type="button" data-md="link" title="Ссылка">🔗</button>
+        <button type="button" data-md="link" title="Ссылка" aria-label="Ссылка">${icon('link', 18)}</button>
         <button type="button" data-md="code" title="Код">{ }</button>
         <button type="button" data-md="wiki" title="Ссылка на заметку [[...]]">[[ ]]</button>
       </div>
