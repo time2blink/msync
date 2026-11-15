@@ -1,4 +1,5 @@
 import { MS } from './state.js';
+import { history } from './history.js';
 // Данные, локальное хранение и слияние версий.
 
 const LS = { data: 'ms:data', cfg: 'ms:cfg', meta: 'ms:meta', vault: 'ms:vault' };
@@ -145,8 +146,17 @@ const store = {
   put(doc, item) {
     Object.assign(item, stamp());
     doc.items[item.id] = item;
+    history.record(doc.id, item);
     store.save(doc.id);
     return item;
+  },
+
+  // Откат к сохранённой версии. Текущее состояние тоже попадает в историю, так что откат обратим.
+  restore(doc, itemId, t) {
+    const snap = history.find(doc.id, itemId, t);
+    if (!snap) return false;
+    store.put(doc, snap);
+    return true;
   },
 
   remove(doc, id) {

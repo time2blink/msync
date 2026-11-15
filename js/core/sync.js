@@ -7,6 +7,7 @@ import './store.js'; // порядок важен: sync читает MS.store п
   const { merge, canon } = MS.store;
 
   const state = { status: 'off', error: '', at: 0, busy: false, again: false };
+  let backoffMs = 0; // сколько ждём перед повтором, если GitHub просит подождать
 
   function configured() {
     const c = MS.cfg.gh;
@@ -32,6 +33,10 @@ import './store.js'; // порядок важен: sync читает MS.store п
           : res.status === 403 ? 'У токена нет доступа к репозиторию (нужно право Contents: Read and write).'
             : 'GitHub ответил ошибкой ' + res.status);
       e.status = res.status;
+      // Временные ограничения GitHub: лимит запросов, перегрузка сервера. Такие ошибки повторяем позже.
+      e.transient = res.status === 429 || res.status >= 500
+        || (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0');
+      e.retryAfter = Number(res.headers.get('retry-after')) || 0;
       throw e;
     }
     return res.json();
@@ -141,12 +146,23 @@ import './store.js'; // порядок важен: sync читает MS.store п
       }
       state.status = 'ok';
       state.error = '';
+      backoffMs = 0;
       state.at = Date.now();
     } catch (e) {
-      state.status = 'error';
-      state.error = e.message || 'Нет связи с GitHub';
       MS.store.saveData();
       MS.store.saveMeta();
+      if (e.transient) {
+        // Не сдаёмся и не пугаем пользователя: ждём всё дольше, до 30 минут.
+        const wait = Math.max(e.retryAfter * 1000, backoffMs || 60000);
+        backoffMs = Math.min(wait * 2, 30 * 60000);
+        state.status = 'wait';
+        state.error = `GitHub просит подождать. Повторю через ${Math.round(wait / 60000) || 1} мин.`;
+        clearTimeout(timer);
+        timer = setTimeout(now, wait);
+      } else {
+        state.status = 'error';
+        state.error = e.message || 'Нет связи с GitHub';
+      }
     }
     state.busy = false;
     notify(changed);
