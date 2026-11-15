@@ -9,6 +9,7 @@
    Цвет спейса задаёт --accent из js. Остальные цвета нейтральные, как у Apple. */
 :root {
   --accent: #3a6cf0;
+  --col: 50rem; /* ширина колонки контента; по центру на широком экране */
   --bg: #f2f2f7;
   --surface: #ffffff;
   --text: #1d1d1f;
@@ -81,7 +82,11 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* Едва заметный оттенок цвета спейса сверху: он узнаётся без лишних декораций. */
+  background:
+    radial-gradient(60rem 34rem at 50% -12%,color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -122,11 +127,14 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
   min-height: 2.3rem; padding: 0.4rem 0.65rem;
   border-radius: var(--r-sm); color: var(--text-2);
   font-size: 0.95rem;
-  transition: background-color 180ms ease, color 180ms ease, transform 140ms var(--ease);
+  transition: background-color 180ms ease, color 180ms ease, transform 150ms ease-out;
 }
-.space:hover, .view:hover, .foot-btn:hover { background: var(--hover); color: var(--text); }
-.space:active, .view:active, .foot-btn:active, .btn:active, .icon-btn:active, .list-date:active, .chip-btn:active {
-  transform: scale(0.97);
+@media (hover: hover) {
+  .space:hover, .view:hover, .foot-btn:hover { background: var(--hover); color: var(--text); }
+}
+.space:active, .view:active, .foot-btn:active, .btn:not(:disabled):active, .icon-btn:active,
+.list-date:active, .chip-btn:active, .note-open:active {
+  transform: scale(0.96);
 }
 
 .space .dot {
@@ -146,6 +154,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .view.on {
   background: var(--surface); color: var(--text); font-weight: 600;
   box-shadow: var(--shadow-card), 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid transparent;
 }
 .view.on .ico { color: var(--accent); }
 
@@ -161,7 +170,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .toolbar {
   position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; gap: 1rem;
-  padding: 1.25rem 2.25rem 1rem;
+  /* Края шапки совпадают с краями колонки контента, даже когда она по центру. */
+  padding: 1.25rem max(2.25rem, calc((100% - var(--col)) / 2 + 2.25rem)) 1rem;
   background: var(--chrome);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
   backdrop-filter: blur(22px) saturate(180%);
@@ -189,8 +199,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .search input::placeholder { color: var(--text-3); }
 .search input::-webkit-search-cancel-button { display: none; }
 
-.content { padding: 0.75rem 2.25rem 5rem; max-width: 46rem; }
-.content.view-calendar, .content.view-notes { max-width: 60rem; }
+.content { padding: 0.75rem 2.25rem 5rem; max-width: var(--col); margin: 0 auto; }
 
 /* ---------- кнопки ---------- */
 .btn {
@@ -198,11 +207,14 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
   height: 2.2rem; padding: 0 0.9rem; border-radius: 10px;
   background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), var(--shadow-card);
   font-weight: 500; white-space: nowrap;
-  transition: transform 140ms var(--ease), background-color 180ms, opacity 180ms;
+  transition: transform 150ms ease-out, background-color 180ms, opacity 180ms;
+  border: 1px solid transparent;
 }
-.btn:hover { background: color-mix(in srgb, var(--surface) 90%, var(--text)); }
+@media (hover: hover) {
+  .btn:hover { background: color-mix(in srgb, var(--surface) 90%, var(--text)); }
+  .btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
+}
 .btn.primary { background: var(--accent); color: #fff; box-shadow: none; font-weight: 600; }
-.btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
 .btn.danger { color: var(--danger); }
 .btn.big { height: 2.8rem; padding: 0 1.4rem; justify-content: center; font-size: 1rem; }
 .btn:disabled { opacity: 0.4; pointer-events: none; }
@@ -210,16 +222,17 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 
 .icon-btn {
   display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; color: var(--text-3);
-  transition: transform 140ms var(--ease), background-color 180ms, color 180ms;
+  transition: transform 150ms ease-out, background-color 180ms, color 180ms;
 }
-.icon-btn:hover { background: var(--hover); color: var(--text); }
-
 .ghost {
   display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem;
   padding: 0.45rem 0.7rem; border-radius: 10px; color: var(--text-2);
   transition: background-color 180ms, color 180ms;
 }
-.ghost:hover { background: var(--hover); color: var(--text); }
+@media (hover: hover) {
+  .icon-btn:hover { background: var(--hover); color: var(--text); }
+  .ghost:hover { background: var(--hover); color: var(--text); }
+}
 
 .row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
 
@@ -232,7 +245,10 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
   position: relative; margin-bottom: 1.75rem; padding: 0.9rem 1.1rem 0.8rem;
   border-radius: var(--r-lg); background: var(--tint-strong);
 }
-.handoff label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--accent-text); margin-bottom: 0.2rem; }
+/* Подпись есть для программ чтения с экрана, но не над полем: подсказка в поле объясняет то же самое. */
+.handoff label {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
 .handoff textarea {
   display: block; width: 100%; border: 0; background: none; outline: none; resize: none;
   field-sizing: content; min-height: 2.9rem; line-height: 1.45;
@@ -247,33 +263,37 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .list-head h3 { flex: 1; }
 .list-head h3::first-letter { text-transform: uppercase; }
 .list-name {
-  flex: 1; min-width: 0; border: 0; background: none; padding: 0.15rem 0.4rem; margin-left: -0.4rem; border-radius: 7px;
+  flex: 0 1 auto; width: auto; field-sizing: content; max-width: 100%; min-width: 0;
+  border: 0; background: none; padding: 0.15rem 0.4rem; margin-left: -0.4rem; border-radius: 7px;
   transition: background-color 180ms;
 }
-.list-name:hover { background: var(--hover); }
-.count { font-size: 0.85rem; color: var(--text-3); font-variant-numeric: tabular-nums; }
+@media (hover: hover) { .list-name:hover { background: var(--hover); } }
+.count { font-size: 0.85rem; color: var(--text-3); font-variant-numeric: tabular-nums; margin-right: 0.3rem; }
 .list-date {
   position: relative; display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer;
   height: 1.8rem; padding: 0 0.6rem; border-radius: 8px; font-size: 0.8rem; color: var(--text-2);
-  transition: background-color 180ms, color 180ms, opacity 180ms, transform 140ms var(--ease);
+  transition: background-color 180ms, color 180ms, opacity 180ms, transform 150ms ease-out;
 }
-.list-date:hover { background: var(--hover); color: var(--text); }
+@media (hover: hover) { .list-date:hover { background: var(--hover); color: var(--text); } }
 .list-date.set { background: var(--tint-strong); color: var(--accent-text); font-weight: 600; }
 .list-date.late { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
 .list-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; border: 0; padding: 0; }
 .list-date:not(.set) { opacity: 0; }
-.list:hover .list-date, .list-date:focus-within { opacity: 1; }
+@media (hover: hover) { .list:hover .list-date { opacity: 1; } }
+.list-date:focus-within { opacity: 1; }
 .day-title { font-size: 1.2rem; letter-spacing: -0.02em; margin: 0 0 0.9rem 0.7rem; }
 .day-title::first-letter { text-transform: uppercase; }
 .add.solo { border-radius: var(--r-lg); box-shadow: var(--shadow-card); }
 .link { color: var(--accent-text); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .row-actions .ghost { margin-top: 0; }
 .list-head .icon-btn { opacity: 0; }
-.list:hover .list-head .icon-btn, .list-head .icon-btn:focus-visible { opacity: 1; }
+@media (hover: hover) { .list:hover .list-head .icon-btn { opacity: 1; } }
+.list-head .icon-btn:focus-visible { opacity: 1; }
 
 .tasks {
   background: var(--surface); border-radius: var(--r-lg) var(--r-lg) 0 0;
   box-shadow: var(--shadow-card);
+  border: 1px solid transparent;
 }
 .tasks:empty { display: none; }
 .tasks:empty + .add { border-radius: var(--r-lg); }
@@ -302,8 +322,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
   box-shadow: inset 0 0 0 1.5px var(--text-3);
   transition: background-color 200ms, box-shadow 200ms, transform 260ms cubic-bezier(0.3, 1.5, 0.5, 1);
 }
-.check:hover::before { box-shadow: inset 0 0 0 1.5px var(--accent); background: var(--tint-strong); }
-.check:active::before { transform: scale(0.86); }
+@media (hover: hover) { .check:hover::before { box-shadow: inset 0 0 0 1.5px var(--accent); background: var(--tint-strong); } }
+.check:active::before { transform: scale(0.96); }
 .check .ico { position: relative; stroke-width: 2.6; stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset 240ms 60ms ease-out; }
 .is-done > .check { color: #fff; }
 .is-done > .check::before { background: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
@@ -314,8 +334,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .t-main { flex: 1; min-width: 0; }
 .t-body { display: block; width: 100%; padding: 0.55rem 0.35rem; border-radius: 8px; }
 .t-main .t-meta { margin: -0.15rem 0 0; padding: 0 0.35rem 0.55rem; }
-.chip-btn { display: inline-flex; align-items: center; gap: 0.15rem; padding-left: 0.2rem; cursor: pointer; transition: background-color 180ms, transform 140ms var(--ease); }
-.chip-btn:hover { background: color-mix(in srgb, var(--accent) 28%, var(--surface)); }
+.chip-btn { display: inline-flex; align-items: center; gap: 0.15rem; padding-left: 0.2rem; cursor: pointer; transition: background-color 180ms, transform 150ms ease-out; }
+@media (hover: hover) { .chip-btn:hover { background: color-mix(in srgb, var(--accent) 28%, var(--surface)); } }
 .chip-btn .ico { transition: transform 260ms var(--ease); }
 .chip-btn.open .ico { transform: rotate(90deg); }
 .t-subs { flex: 0 0 100%; padding: 0 0.5rem 0.6rem 2.8rem; }
@@ -344,8 +364,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
   color: var(--text-3); opacity: 0; transition: opacity 160ms, color 160ms;
 }
 .grip { cursor: grab; touch-action: none; }
-.task:hover .pin, .task:hover .grip, .pin:focus-visible, .task.dragging .grip { opacity: 1; }
-.pin:hover { color: var(--accent); }
+@media (hover: hover) {
+  .task:hover .pin, .task:hover .grip { opacity: 1; }
+  .pin:hover { color: var(--accent); }
+}
+.pin:focus-visible, .task.dragging .grip { opacity: 1; }
 .is-pinned .pin { opacity: 1; color: var(--accent); }
 .is-pinned .pin .ico { fill: currentColor; }
 @media (hover: none) { .pin, .grip, .list-head .icon-btn, .list-date:not(.set) { opacity: 1; } }
@@ -355,6 +378,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
   padding: 0.2rem 0.4rem 0.2rem 0.5rem; background: var(--surface);
   border-radius: 0 0 var(--r-lg) var(--r-lg);
   box-shadow: inset 0 1px 0 var(--line), var(--shadow-card);
+  border: 1px solid transparent;
 }
 .add-plus { flex: none; display: grid; place-items: center; width: 2.3rem; height: 2.3rem; color: var(--text-3); }
 .add:focus-within .add-plus { color: var(--accent); }
@@ -371,16 +395,16 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .note {
   display: flex; flex-direction: column; background: var(--surface);
   border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-card);
+  border: 1px solid transparent;
 }
-.note-open { flex: 1; padding: 1rem 1.05rem 0.5rem; transition: transform 140ms var(--ease); }
-.note-open:active { transform: scale(0.985); }
+.note-open { flex: 1; padding: 1rem 1.05rem 0.5rem; transition: transform 150ms ease-out; }
 .note h3 { font-size: 1.02rem; font-weight: 650; letter-spacing: -0.015em; margin-bottom: 0.3rem; overflow-wrap: anywhere; }
 .note p {
   color: var(--text-2); font-size: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere;
   display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
 }
 .note p.veiled { filter: blur(5px); transition: filter 220ms; }
-.note:hover p.veiled { filter: none; }
+@media (hover: hover) { .note:hover p.veiled { filter: none; } }
 .note footer { display: flex; align-items: center; justify-content: space-between; padding: 0.1rem 0.5rem 0.5rem 1.05rem; font-size: 0.78rem; color: var(--text-3); }
 
 /* ---------- календарь ---------- */
@@ -399,7 +423,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
   min-height: 5.6rem; padding: 0.4rem; background: var(--surface); cursor: pointer;
   display: flex; flex-direction: column; gap: 2px; transition: background-color 160ms;
 }
-.cell:hover { background: color-mix(in srgb, var(--surface) 94%, var(--text)); }
+@media (hover: hover) { .cell:hover { background: color-mix(in srgb, var(--surface) 94%, var(--text)); } }
 .cell.out { background: color-mix(in srgb, var(--surface) 50%, var(--bg)); }
 .cell.out .num { color: var(--text-3); }
 .cell.sel { background: var(--tint-strong); }
@@ -457,7 +481,7 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
 .sheet {
   position: fixed; z-index: 21; left: 50%; top: 50%;
   width: min(34rem, calc(100vw - 2rem)); max-height: min(44rem, calc(100dvh - 2rem)); overflow-y: auto;
-  padding: 1.5rem 1.5rem 1.3rem; border-radius: 22px;
+  padding: 1.5rem 1.5rem 1.3rem; border-radius: 22px; overscroll-behavior: contain;
   background: var(--surface); box-shadow: var(--shadow-sheet);
   display: flex; flex-direction: column; gap: 0.85rem;
   opacity: 0; pointer-events: none; visibility: hidden;
@@ -501,7 +525,7 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
 .toast {
   position: fixed; z-index: 30; left: 50%; bottom: 1.5rem;
   display: flex; align-items: center; gap: 0.9rem;
-  padding: 0.6rem 0.7rem 0.6rem 1rem; border-radius: 14px;
+  padding: 0.6rem 0.7rem 0.6rem 1rem; border-radius: 18px;
   background: color-mix(in srgb, var(--text) 90%, transparent); color: var(--bg); font-size: 0.92rem;
   -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
   box-shadow: var(--shadow-float);
@@ -513,6 +537,60 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
 .toast button {
   color: var(--bg); font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 8px;
   background: color-mix(in srgb, var(--bg) 18%, transparent); white-space: nowrap;
+}
+
+/* ---------- широкий экран: всё по центру ----------
+   Боковая панель становится шапкой: название, спейсы и разделы по центру, кнопки настроек справа.
+   Заголовок и поиск закреплены сверху, отступ прокрутки не даёт заголовкам уходить под них. */
+@media (min-width: 761px) {
+  html { scroll-padding-top: 7.5rem; }
+
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+
+  .sidebar {
+    position: relative; height: auto; overflow: visible;
+    flex-direction: column; align-items: center; gap: 0.9rem;
+    padding: 1.1rem 6rem 0.9rem; border-right: 0; border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+  }
+  .brand { padding: 0; text-align: center; font-size: 1rem; }
+
+  .spaces { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.4rem; }
+  .space { min-height: 2.1rem; padding: 0.35rem 0.85rem; border-radius: 999px; }
+  .add-space .space-name { display: inline; }
+
+  .views {
+    flex-direction: row; gap: 0; padding: 3px; border-radius: 12px; background: var(--hover);
+  }
+  .view { min-height: 2rem; padding: 0.3rem 0.8rem; border-radius: 9px; }
+  .view.on { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+
+  /* Значки стоят сразу справа от названия, в его строке: название примерно 3.3rem шириной, по центру. */
+  .side-foot {
+    position: absolute; top: 0.8rem; left: calc(50% + 2.3rem);
+    flex-direction: row; gap: 0.2rem; margin: 0;
+  }
+  .side-foot .foot-btn { min-height: 2.1rem; padding: 0.4rem; border-radius: 9px; }
+  .side-foot .foot-label { display: none; }
+  .sync-btn .foot-label { display: none; }
+
+  .toolbar {
+    flex-direction: column; justify-content: center; gap: 0.6rem;
+    padding: 0.9rem 2.25rem 0.8rem; text-align: center;
+  }
+  .toolbar h1 { flex: none; max-width: 100%; font-size: clamp(1.5rem, 2.4vw, 1.9rem); text-align: center; }
+  .search { width: min(20rem, 60vw); }
+  .content { padding-top: 1.25rem; }
+}
+
+/* Окно заметки: шире и фиксированной высоты, поле текста заполняет его, поэтому окно не прыгает вниз при наборе. */
+@media (min-width: 761px) {
+  .sheet:has(textarea.tall) {
+    width: min(48rem, calc(100vw - 2rem));
+    height: min(46rem, calc(100dvh - 2rem));
+    max-height: min(46rem, calc(100dvh - 2rem));
+  }
+  .sheet:has(textarea.tall) textarea.tall { flex: 1; min-height: 12rem; }
 }
 
 /* ---------- телефон ---------- */
@@ -552,6 +630,110 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
   .sheet-open .sheet { transform: translateY(0); }
   .fields { grid-template-columns: 1fr; }
 }
+
+/* ---------- палитры тем ----------
+   Задают поверхности, текст и линии. Цвет спейса (--accent) остаётся поверх любой темы. */
+:root[data-theme='rose-dawn'] {
+  --bg: #faf4ed; --surface: #fffaf3; --text: #575279; --text-2: #797593; --text-3: #9893a5;
+  --line: rgba(87, 82, 121, 0.16); --hover: rgba(87, 82, 121, 0.08); --danger: #b4637a;
+  --tint: color-mix(in srgb, var(--accent) 6%, var(--bg));
+  --tint-strong: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --accent-text: color-mix(in srgb, var(--accent) 80%, #000);
+  --chrome: rgba(250, 244, 237, 0.84);
+  --shadow-card: 0 1px 2px rgba(87, 82, 121, 0.08), 0 0 0 0.5px rgba(87, 82, 121, 0.06);
+  --shadow-float: 0 6px 20px rgba(87, 82, 121, 0.14), 0 1px 3px rgba(87, 82, 121, 0.08);
+  --shadow-sheet: 0 30px 80px rgba(87, 82, 121, 0.25), 0 2px 10px rgba(87, 82, 121, 0.1);
+  color-scheme: light;
+}
+
+:root[data-theme='rose-pine'] {
+  --bg: #191724; --surface: #1f1d2e; --text: #e0def4; --text-2: #908caa; --text-3: #6e6a86;
+  --line: rgba(224, 222, 244, 0.1); --hover: rgba(224, 222, 244, 0.07); --danger: #eb6f92;
+  --tint: color-mix(in srgb, var(--accent) 9%, var(--bg));
+  --tint-strong: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  --accent-text: color-mix(in srgb, var(--accent) 45%, #fff);
+  --chrome: rgba(25, 23, 36, 0.8);
+  --shadow-card: 0 0 0 0.5px rgba(224, 222, 244, 0.06);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-sheet: 0 30px 80px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+:root[data-theme='nord'] {
+  --bg: #2e3440; --surface: #3b4252; --text: #eceff4; --text-2: #d8dee9; --text-3: #9aa5b9;
+  --line: rgba(216, 222, 233, 0.12); --hover: rgba(216, 222, 233, 0.08); --danger: #bf616a;
+  --tint: color-mix(in srgb, var(--accent) 9%, var(--bg));
+  --tint-strong: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  --accent-text: color-mix(in srgb, var(--accent) 45%, #fff);
+  --chrome: rgba(46, 52, 64, 0.8);
+  --shadow-card: 0 0 0 0.5px rgba(236, 239, 244, 0.06);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-sheet: 0 30px 80px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+:root[data-theme='dracula'] {
+  --bg: #282a36; --surface: #343746; --text: #f8f8f2; --text-2: #c9cbe0; --text-3: #7d86b3;
+  --line: rgba(248, 248, 242, 0.12); --hover: rgba(248, 248, 242, 0.08); --danger: #ff5555;
+  --tint: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  --tint-strong: color-mix(in srgb, var(--accent) 24%, var(--surface));
+  --accent-text: color-mix(in srgb, var(--accent) 45%, #fff);
+  --chrome: rgba(40, 42, 54, 0.8);
+  --shadow-card: 0 0 0 0.5px rgba(248, 248, 242, 0.06);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-sheet: 0 30px 80px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+:root[data-theme='tokyo-night'] {
+  --bg: #1a1b26; --surface: #24283b; --text: #c0caf5; --text-2: #a9b1d6; --text-3: #6b739e;
+  --line: rgba(192, 202, 245, 0.12); --hover: rgba(192, 202, 245, 0.08); --danger: #f7768e;
+  --tint: color-mix(in srgb, var(--accent) 9%, var(--bg));
+  --tint-strong: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  --accent-text: color-mix(in srgb, var(--accent) 45%, #fff);
+  --chrome: rgba(26, 27, 38, 0.8);
+  --shadow-card: 0 0 0 0.5px rgba(192, 202, 245, 0.06);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-sheet: 0 30px 80px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+/* Карточки выбора темы в настройках: превью из трёх элементов. */
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr)); gap: 0.6rem; }
+.theme-card {
+  display: flex; flex-direction: column; gap: 0.45rem; padding: 0.45rem; border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 200ms ease, transform 150ms ease-out;
+}
+.theme-card:not(:disabled):active { transform: scale(0.96); }
+@media (hover: hover) { .theme-card:hover { box-shadow: inset 0 0 0 1px var(--text-3); } }
+.theme-card.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.theme-prev {
+  position: relative; display: block; height: 3.3rem; border-radius: 10px; overflow: hidden;
+  background: var(--pb); box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+}
+.theme-prev::before {
+  content: ''; position: absolute; left: 0.45rem; right: 0.45rem; top: 0.45rem; bottom: 0.45rem;
+  border-radius: 7px; background: var(--ps);
+}
+.theme-prev i {
+  position: absolute; left: 0.8rem; top: 1rem; width: 52%; height: 0.32rem; border-radius: 2px;
+  background: var(--pt); opacity: 0.85;
+}
+.theme-prev b {
+  position: absolute; right: 0.8rem; bottom: 0.8rem; width: 0.9rem; height: 0.9rem; border-radius: 50%;
+  background: var(--pa);
+}
+.theme-name { font-size: 0.8rem; color: var(--text-2); padding: 0 0.2rem; text-align: left; }
+.theme-card.on .theme-name { color: var(--text); font-weight: 600; }
+
+/* ---------- выделение, каретка, прокрутка, перенос строк, цифры ---------- */
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); color: inherit; }
+input, textarea { caret-color: var(--accent); }
+html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+h1, h2, h3 { text-wrap: balance; }
+.hint, .empty, .note p, .gate p, .handoff textarea { text-wrap: pretty; }
+.count, .chip, .more, .num, .ev, .cal-week, .list-date, .handoff-at { font-variant-numeric: tabular-nums; }
 
 /* ---------- доступность ---------- */
 @media (prefers-reduced-motion: reduce) {

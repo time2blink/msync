@@ -13,7 +13,8 @@
   // Ручная тема (настройки): применяем до отрисовки, чтобы не мигала не та тема.
   try {
     var t = localStorage.getItem('msync-theme');
-    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    var known = ['light', 'dark', 'rose-dawn', 'rose-pine', 'nord', 'dracula', 'tokyo-night'];
+    if (known.indexOf(t) >= 0) document.documentElement.dataset.theme = t;
   } catch (e) { /* хранилища нет: тема по системе */ }
 </script>
 </head>

@@ -689,7 +689,17 @@ import '../core/days.js';
   }
 
   // Тема: «auto» следует системной, светлая и тёмная фиксируются. Хранится в браузере, не в данных.
-  const THEMES = [['auto', 'Системная'], ['light', 'Светлая'], ['dark', 'Тёмная']];
+  // Превью: фон, поверхность, текст, акцент. Сами цвета тем задаёт styles.css.
+  const THEMES = [
+    ['auto', 'Как в системе', ['#f2f2f7', '#ffffff', '#1d1d1f', '#3a6cf0']],
+    ['light', 'Светлая', ['#f2f2f7', '#ffffff', '#1d1d1f', '#3a6cf0']],
+    ['dark', 'Тёмная', ['#000000', '#1c1c1e', '#f5f5f7', '#3a6cf0']],
+    ['rose-dawn', 'Rosé Pine Dawn', ['#faf4ed', '#fffaf3', '#575279', '#286983']],
+    ['rose-pine', 'Rosé Pine', ['#191724', '#1f1d2e', '#e0def4', '#c4a7e7']],
+    ['nord', 'Nord', ['#2e3440', '#3b4252', '#eceff4', '#88c0d0']],
+    ['dracula', 'Dracula', ['#282a36', '#44475a', '#f8f8f2', '#bd93f9']],
+    ['tokyo-night', 'Tokyo Night', ['#1a1b26', '#24283b', '#c0caf5', '#7aa2f7']],
+  ];
   const readTheme = () => { try { return localStorage.getItem('msync-theme') || 'auto'; } catch { return 'auto'; } };
   function setTheme(id) {
     try { if (id === 'auto') localStorage.removeItem('msync-theme'); else localStorage.setItem('msync-theme', id); } catch { /* без хранилища тема действует до перезагрузки */ }
@@ -702,8 +712,8 @@ import '../core/days.js';
     openSheet(`
       <h2>Настройки</h2>
       <h3>Оформление</h3>
-      <div class="seg" id="theme-seg" role="group" aria-label="Тема оформления">
-        ${THEMES.map(([id, n]) => `<button type="button" class="${readTheme() === id ? 'on' : ''}" data-theme-set="${id}" aria-pressed="${readTheme() === id}">${n}</button>`).join('')}
+      <div class="theme-grid" id="theme-grid" role="group" aria-label="Тема оформления">
+        ${THEMES.map(([id, n, c]) => `<button type="button" class="theme-card ${readTheme() === id ? 'on' : ''}" data-theme-set="${id}" aria-pressed="${readTheme() === id}" style="--pb:${c[0]};--ps:${c[1]};--pt:${c[2]};--pa:${c[3]}"><span class="theme-prev"><i></i><b></b></span><span class="theme-name">${n}</span></button>`).join('')}
       </div>
       <h3>Синхронизация через GitHub</h3>
       <p class="hint">Нужен приватный репозиторий и токен fine-grained с доступом только к нему (право Contents: Read and write). Токен хранится в этом браузере.</p>
@@ -720,7 +730,7 @@ import '../core/days.js';
         <label class="btn file">Загрузить копию<input type="file" id="imp" accept="application/json,.json" hidden></label>
       </div>`,
     (sh) => {
-      $('#theme-seg', sh).addEventListener('click', (e) => {
+      $('#theme-grid', sh).addEventListener('click', (e) => {
         const b = e.target.closest('[data-theme-set]');
         if (!b) return;
         setTheme(b.dataset.themeSet);
