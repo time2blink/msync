@@ -9,6 +9,7 @@
    Цвет спейса задаёт --accent из js. Остальные цвета нейтральные, как у Apple. */
 :root {
   --accent: #3a6cf0;
+  --col: 50rem; /* ширина колонки контента; по центру на широком экране */
   --bg: #f2f2f7;
   --surface: #ffffff;
   --text: #1d1d1f;
@@ -83,7 +84,7 @@ body {
   margin: 0;
   /* Едва заметный оттенок цвета спейса сверху: он узнаётся без лишних декораций. */
   background:
-    radial-gradient(60rem 34rem at 0% -12%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+    radial-gradient(60rem 34rem at 50% -12%,color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
     var(--bg);
   background-attachment: fixed;
   color: var(--text);
@@ -169,7 +170,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .toolbar {
   position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; gap: 1rem;
-  padding: 1.25rem 2.25rem 1rem;
+  /* Края шапки совпадают с краями колонки контента, даже когда она по центру. */
+  padding: 1.25rem max(2.25rem, calc((100% - var(--col)) / 2 + 2.25rem)) 1rem;
   background: var(--chrome);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
   backdrop-filter: blur(22px) saturate(180%);
@@ -197,8 +199,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offs
 .search input::placeholder { color: var(--text-3); }
 .search input::-webkit-search-cancel-button { display: none; }
 
-.content { padding: 0.75rem 2.25rem 5rem; max-width: 46rem; }
-.content.view-calendar, .content.view-notes { max-width: 60rem; }
+.content { padding: 0.75rem 2.25rem 5rem; max-width: var(--col); margin: 0 auto; }
 
 /* ---------- кнопки ---------- */
 .btn {
