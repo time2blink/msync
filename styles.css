@@ -818,3 +818,8 @@ h1, h2, h3 { text-wrap: balance; }
 .toc-item.l2 { padding-left: 0.8rem; }
 .toc-item.l3 { padding-left: 1.6rem; }
 .toc-item:hover { color: var(--accent-text); }
+
+.md-img { display: block; max-width: 100%; height: auto; border-radius: 12px; margin: 0.6rem 0; background: var(--hover); min-height: 3rem; }
+.timer-btn.on { color: var(--accent-text); font-weight: 600; }
+.timebox { background: var(--surface); border-radius: 14px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
+.timebox h3 { font-size: 0.95rem; margin-bottom: 0.4rem; }

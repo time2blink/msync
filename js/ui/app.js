@@ -5,6 +5,8 @@ import '../core/sync.js';
 import '../core/spring.js';
 import '../core/days.js';
 import '../core/features.js';
+import '../core/images.js';
+import '../core/time.js';
 // Интерфейс.
 
   const S = MS.store;
@@ -127,6 +129,7 @@ import '../core/features.js';
         ${icon('sync', 18)}<span class="foot-label">${esc(label)}</span>
       </button>
       ${MS.vault ? `<button class="foot-btn" data-act="lock" title="Заблокировать сейф">${icon('lock', 18)}<span class="foot-label">Заблокировать сейф</span></button>` : ''}
+      <button class="foot-btn timer-btn ${MS.time.running() ? 'on' : ''}" data-act="timer" title="Учёт времени по работе">${icon('cal', 18)}<span class="foot-label">${MS.time.running() ? 'Идёт учёт времени · стоп' : 'Учёт времени: старт'}</span></button>
       <button class="foot-btn" data-act="settings" title="Настройки">${icon('gear', 18)}<span class="foot-label">Настройки</span></button>`;
   }
 
@@ -532,7 +535,13 @@ import '../core/features.js';
   function journalView(doc) {
     const tasks = doneTasks(doc);
     const lists = Object.fromEntries(listsOf(doc).map((l) => [l.id, l.name]));
+    const days = period === 'week' ? 7 : period === 'month' ? 30 : 3650;
+    const spent = MS.time.totalSince(S.spaces(), days).filter((r) => r.minutes > 0);
+    const timeHtml = spent.length
+      ? `<section class="timebox"><h3>Время за период</h3>${spent.map((r) => `<div class="hist-row"><span>${esc(r.name)}</span><span>${Math.floor(r.minutes / 60)} ч ${r.minutes % 60} мин</span></div>`).join('')}</section>`
+      : '';
     return `
+      ${timeHtml}
       <div class="row-actions">
         <div class="seg" role="tablist">${PERIODS.map(([id, n]) => `<button class="${period === id ? 'on' : ''}" data-period="${id}">${n}</button>`).join('')}</div>
         <span class="grow"></span>
@@ -785,6 +794,7 @@ import '../core/features.js';
         ${fresh ? '' : `<button class="btn danger" id="ns-del">${icon('trash', 16)} Удалить</button>`}
         <button class="btn" id="ns-copy">${icon('copy', 16)} Скопировать текст</button>
         <button class="btn" id="ns-md">Скачать .md</button>
+        ${MS.cfg.space === MS.VAULT ? '' : `<button class="btn" id="ns-img">Картинка</button><input type="file" id="ns-file" accept="image/*" hidden>`}
         ${fresh ? '' : `<button class="btn ${n.pinned ? 'on' : ''}" id="ns-pin">${n.pinned ? 'Открепить' : 'Закрепить'}</button>`}
         <span class="grow"></span>
         <button class="btn primary" data-close>Готово</button>
@@ -810,7 +820,30 @@ import '../core/features.js';
         const toc = heads.length >= 2
           ? `<nav class="toc" aria-label="Оглавление">${heads.map((h) => `<button class="toc-item l${h.level}" data-toc="${h.id}">${esc(h.text)}</button>`).join('')}</nav>` : '';
         $('#ns-view', sh).innerHTML = (toc + F().mdToHtml(body)) || '<p class="hint">Пока пусто.</p>';
+        // Картинки подгружаются по ссылке img:<id> из репозитория.
+        $$('img[data-img]', $('#ns-view', sh)).forEach((img) => {
+          MS.images.imageUrl(MS.cfg.space, img.dataset.img).then((u) => {
+            if (u) img.src = u; else img.alt = (img.alt || 'картинка') + ' (не загрузилась: проверьте связь)';
+          });
+        });
       }
+      const imgBtn = $('#ns-img', sh);
+      if (imgBtn) imgBtn.addEventListener('click', () => $('#ns-file', sh).click());
+      const fileInput = $('#ns-file', sh);
+      if (fileInput) fileInput.addEventListener('change', async (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        try {
+          toast('Загружаю картинку…');
+          const link = await MS.images.addImage(MS.cfg.space, f);
+          const ta = $('#ns-body', sh);
+          ta.value = (ta.value ? ta.value + '\n\n' : '') + `![картинка](${link})\n`;
+          n.body = ta.value; save();
+          toast('Картинка добавлена');
+          if (!$('#ns-view', sh).hidden) renderView();
+        } catch (err) { toast(err.message || 'Картинка не добавлена'); }
+        e.target.value = '';
+      });
       $('#ns-view', sh).addEventListener('click', (e) => {
         const w = e.target.closest('.wikilink');
         if (w) { e.preventDefault(); openTitle(w.dataset.wiki); return; }
@@ -1079,6 +1112,18 @@ import '../core/features.js';
       if (act.dataset.act === 'sync') { if (MS.sync.configured()) MS.sync.now(); else settingsSheet(); }
       if (act.dataset.act === 'settings') settingsSheet();
       if (act.dataset.act === 'lock') lockVault();
+      if (act.dataset.act === 'timer') {
+        if (MS.time.running()) {
+          const done = MS.time.stop();
+          toast(done ? `Записано: ${done.minutes} мин` : 'Слишком коротко, не записано');
+        } else if (isVault()) {
+          toast('Учёт времени не ведётся в сейфе');
+        } else {
+          MS.time.start(MS.cfg.space);
+          toast('Учёт времени запущен');
+        }
+        renderSide();
+      }
     });
 
     $('#search').addEventListener('input', (e) => { query = e.target.value.trim(); renderSide(); renderMain(); });

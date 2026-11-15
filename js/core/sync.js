@@ -115,6 +115,22 @@ import './history.js';
     return changed;
   }
 
+  // Двоичные файлы (картинки) в приватном репозитории: байты туда и обратно, в base64.
+  async function putBinary(path, bytes) {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    const existing = await api(path);
+    const body = { message: 'MSync: ' + path, content: btoa(bin) };
+    if (existing && existing.sha) body.sha = existing.sha;
+    await api(path, { method: 'PUT', body: JSON.stringify(body) });
+    return true;
+  }
+  async function getBinary(path) {
+    const r = await api(path);
+    if (!r || !r.content) return null;
+    return MS.unb64(r.content);
+  }
+
   // История спейса: файл history/<спейс>.json. Сейф пока хранит историю только на этом компьютере.
   async function syncHistory(id) {
     const path = `history/${id}.json`;
@@ -191,5 +207,5 @@ import './history.js';
     timer = setTimeout(now, 4000);
   }
 
-  MS.sync = { state, configured, now, schedule };
+  MS.sync = { state, configured, now, schedule, putBinary, getBinary };
 

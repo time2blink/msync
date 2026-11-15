@@ -182,6 +182,7 @@ export function mdToHtml(src) {
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const inline = (s) => esc(s)
     .replace(/\[\[([^\]\n]+)\]\]/g, '<a href="#" class="wikilink" data-wiki="$1">$1</a>')
+    .replace(/!\[([^\]]*)\]\(img:([\w-]+)\)/g, '<img class="md-img" data-img="$2" alt="$1" src="" loading="lazy">')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
