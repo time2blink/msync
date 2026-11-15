@@ -565,8 +565,10 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
   .view { min-height: 2rem; padding: 0.3rem 0.8rem; border-radius: 9px; }
   .view.on { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
 
+  /* Значки стоят сразу справа от названия, в его строке: название примерно 3.3rem шириной, по центру. */
   .side-foot {
-    position: absolute; top: 1rem; right: 1.25rem; flex-direction: row; gap: 0.2rem; margin: 0;
+    position: absolute; top: 0.8rem; left: calc(50% + 2.3rem);
+    flex-direction: row; gap: 0.2rem; margin: 0;
   }
   .side-foot .foot-btn { min-height: 2.1rem; padding: 0.4rem; border-radius: 9px; }
   .side-foot .foot-label { display: none; }
