@@ -539,6 +539,48 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
   background: color-mix(in srgb, var(--bg) 18%, transparent); white-space: nowrap;
 }
 
+/* ---------- широкий экран: всё по центру ----------
+   Боковая панель становится шапкой: название, спейсы и разделы по центру, кнопки настроек справа.
+   Заголовок и поиск закреплены сверху, отступ прокрутки не даёт заголовкам уходить под них. */
+@media (min-width: 761px) {
+  html { scroll-padding-top: 7.5rem; }
+
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+
+  .sidebar {
+    position: relative; height: auto; overflow: visible;
+    flex-direction: column; align-items: center; gap: 0.9rem;
+    padding: 1.1rem 6rem 0.9rem; border-right: 0; border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+  }
+  .brand { padding: 0; text-align: center; font-size: 1rem; }
+
+  .spaces { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.4rem; }
+  .space { min-height: 2.1rem; padding: 0.35rem 0.85rem; border-radius: 999px; }
+  .add-space .space-name { display: inline; }
+
+  .views {
+    flex-direction: row; gap: 0; padding: 3px; border-radius: 12px; background: var(--hover);
+  }
+  .view { min-height: 2rem; padding: 0.3rem 0.8rem; border-radius: 9px; }
+  .view.on { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+
+  .side-foot {
+    position: absolute; top: 1rem; right: 1.25rem; flex-direction: row; gap: 0.2rem; margin: 0;
+  }
+  .side-foot .foot-btn { min-height: 2.1rem; padding: 0.4rem; border-radius: 9px; }
+  .side-foot .foot-label { display: none; }
+  .sync-btn .foot-label { display: none; }
+
+  .toolbar {
+    flex-direction: column; justify-content: center; gap: 0.6rem;
+    padding: 0.9rem 2.25rem 0.8rem; text-align: center;
+  }
+  .toolbar h1 { flex: none; max-width: 100%; font-size: clamp(1.5rem, 2.4vw, 1.9rem); text-align: center; }
+  .search { width: min(20rem, 60vw); }
+  .content { padding-top: 1.25rem; }
+}
+
 /* ---------- телефон ---------- */
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
