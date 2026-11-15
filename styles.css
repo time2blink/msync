@@ -594,6 +594,8 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
 
 /* ---------- телефон ---------- */
 @media (max-width: 760px) {
+  /* Шапка закреплена сверху (около 60 px): прокрутка к полю или ссылке не должна прятать их под ней. */
+  html { scroll-padding-top: 4.5rem; }
   .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
   .sidebar {
     position: static; height: auto; flex-direction: row; align-items: center; gap: 0.4rem;
