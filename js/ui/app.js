@@ -445,6 +445,9 @@ import '../core/time.js';
   // ---------- календарь ----------
   function calendarView(doc) {
     const y = calMonth.getFullYear(), m = calMonth.getMonth();
+    // Прошлый месяц приглушается, текущий выделяется, будущий обычный (см. styles.css, .cal-past/.cal-now).
+    const nowIdx = new Date().getFullYear() * 12 + new Date().getMonth();
+    const monthState = y * 12 + m < nowIdx ? 'past' : y * 12 + m === nowIdx ? 'now' : 'future';
     const first = new Date(y, m, 1);
     const offset = (first.getDay() + 6) % 7;
     const allLists = listsOf(doc);
@@ -480,7 +483,7 @@ import '../core/time.js';
     const dayTasks = (byDay[calDay] || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     const lists = Object.fromEntries(allLists.map((l) => [l.id, l.name]));
     return `
-      <div class="cal-head">
+      <div class="cal-head cal-${monthState}">
         <h2>${calMonth.toLocaleDateString('ru', { month: 'long' })} ${calMonth.getFullYear()}</h2>
         <div class="cal-nav">
           <button class="icon-btn" data-act="cal-prev" aria-label="Предыдущий месяц">${icon('left')}</button>
@@ -489,7 +492,7 @@ import '../core/time.js';
         </div>
       </div>
       <div class="cal-week">${['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((d) => `<span>${d}</span>`).join('')}</div>
-      <div class="cal-grid">${cells}</div>
+      <div class="cal-grid cal-${monthState}">${cells}</div>
       <section class="offdays">
         <header class="list-head"><h3>Нерабочие дни</h3><span class="count">${offList.length || ''}</span></header>
         <div class="off-actions">
