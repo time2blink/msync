@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MSync</title>
+<meta name="theme-color" content="#f3f4f6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">MSync</div>
+    <nav class="spaces" id="spaces" aria-label="Спейсы"></nav>
+    <nav class="views" id="views" aria-label="Разделы"></nav>
+    <div class="side-foot" id="foot"></div>
+  </aside>
+  <main class="main">
+    <header class="toolbar">
+      <h1 id="title"></h1>
+      <label class="search">
+        <span class="search-ico" id="search-ico"></span>
+        <input id="search" type="search" placeholder="Поиск в спейсе" autocomplete="off" aria-label="Поиск в спейсе">
+      </label>
+    </header>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<script type="module" src="js/ui/app.js"></script>
+</body>
+</html>

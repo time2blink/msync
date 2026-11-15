@@ -1,0 +1,6 @@
+{
+  "name": "msync-tests",
+  "private": true,
+  "scripts": { "test": "node run.js" },
+  "devDependencies": { "puppeteer-core": "*" }
+}

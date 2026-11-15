@@ -1,0 +1,47 @@
+const puppeteer = require('puppeteer-core');
+const path = require('path');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const res = [];
+const check = (n, ok, x = '') => res.push((ok ? 'PASS  ' : 'FAIL  ') + n + '  ' + x);
+(async () => {
+  const browser = await puppeteer.launch({ executablePath: (process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe'), headless: 'new' });
+  const page = await browser.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(String(e)));
+  await page.setViewport({ width: 1100, height: 700 });
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+  await page.goto('http://127.0.0.1:8765/');
+  await page.click('.add input'); await page.keyboard.type('докинуть на сервре'); await page.keyboard.press('Enter'); await sleep(80);
+  await page.keyboard.type('вторая задача'); await page.keyboard.press('Enter'); await sleep(80);
+  await page.click('.task:nth-child(1) .t-body'); await sleep(400);
+  await page.click('#ts-sub-add input');
+  await page.keyboard.type('залить файлы'); await page.keyboard.press('Enter');
+  await page.keyboard.type('проверить права'); await page.keyboard.press('Enter');
+  await page.click('#ts-note'); await page.keyboard.type('пароль в сейфе');
+  await page.keyboard.press('Escape'); await sleep(400);
+  check('чип 0/2 есть', await page.$eval('.chip-btn', (e) => e.textContent.trim() === '0/2'));
+  check('шаги скрыты', !(await page.$('.t-subs')));
+  await page.click('.chip-btn'); await sleep(400);
+  check('шаги раскрылись', (await page.$$('.t-subs .sub')).length === 2);
+  await page.screenshot({ path: path.join(__dirname, 'out', 'x-open.png') });
+  await page.click('.t-subs .sub:nth-child(1) .check'); await sleep(300);
+  check('шаг отметился и список остался раскрытым', (await page.$$('.t-subs .sub.is-done')).length === 1 && (await page.$eval('.chip-btn', (e) => e.textContent.trim() === '1/2')));
+  await page.click('[data-add-sub] input'); await page.keyboard.type('отправить отчёт'); await page.keyboard.press('Enter'); await sleep(200);
+  check('шаг добавлен прямо в списке', (await page.$$('.t-subs .sub')).length === 3 && (await page.evaluate(() => document.activeElement.closest('[data-add-sub]') !== null)));
+  await page.screenshot({ path: path.join(__dirname, 'out', 'x-open2.png') });
+  // перетаскивание с раскрытой задачей не ломается
+  const order0 = await page.$$eval('.task > .t-main .t-title', (e) => e.map((x) => x.textContent));
+  await page.hover('.task:nth-child(1)');
+  const g = await (await page.$('.task:nth-child(1) .grip')).boundingBox();
+  await page.mouse.move(g.x + 8, g.y + 8); await page.mouse.down();
+  for (let i = 1; i <= 16; i++) { await page.mouse.move(g.x + 8, g.y + 8 + i * 10); await sleep(12); }
+  await page.mouse.up(); await sleep(900);
+  const order1 = await page.$$eval('.task > .t-main .t-title', (e) => e.map((x) => x.textContent));
+  check('перетаскивание раскрытой задачи работает', order1[0] === order0[1] && order1[1] === order0[0], order1.join('|'));
+  check('раскрытие сохранилось после переноса', !!(await page.$('.t-subs')));
+  await page.click('.chip-btn'); await sleep(300);
+  check('повторный клик сворачивает', !(await page.$('.t-subs')));
+  check('ошибок нет', errs.length === 0, errs.join(';'));
+  console.log(res.join('\n'));
+  await browser.close();
+})().catch((e) => { console.log(res.join('\n')); console.error('CRASH', e.message); process.exit(1); });
