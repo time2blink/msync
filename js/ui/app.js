@@ -73,10 +73,15 @@ import '../core/features.js';
 
   const VIEWS = [
     ['tasks', 'Задачи', 'list'],
+    ['today', 'Сегодня', 'cal'],
+    ['board', 'Доска', 'list'],
     ['notes', 'Заметки', 'note'],
+    ['tags', 'Теги', 'note'],
     ['calendar', 'Календарь', 'cal'],
     ['journal', 'Сделано', 'done'],
   ];
+  let tagFilter = '';
+  const F = () => MS.features;
 
   const isVault = () => MS.cfg.space === MS.VAULT;
   const cur = () => S.doc(MS.cfg.space);
@@ -105,6 +110,13 @@ import '../core/features.js';
     $('#views').innerHTML = VIEWS.map(([id, name, ic]) =>
       `<button class="view ${view === id && !query ? 'on' : ''}" data-view="${id}">${icon(ic)}<span>${name}</span></button>`).join('');
 
+    // Быстрый доступ: закреплённое по всем работам.
+    const quick = F().pinnedEverywhere();
+    $('#quick').innerHTML = quick.length
+      ? '<p class="quick-title">Быстрый доступ</p>' + quick.slice(0, 8).map((q) =>
+        `<button class="view quick-item" data-quick-space="${esc(q.space)}" data-quick-id="${esc(q.item.id)}">${icon('star', 15)}<span>${esc(q.item.title || q.item.name || 'Заметка')}</span></button>`).join('')
+      : '';
+
     const st = MS.sync.state;
     const label = !MS.sync.configured() ? 'Синхронизация не настроена'
       : st.status === 'syncing' ? 'Синхронизация…'
@@ -128,7 +140,10 @@ import '../core/features.js';
     if (isVault() && !MS.vault) { c.innerHTML = vaultGate(); const i = $('input', c); if (i) i.focus(); return; }
     if (!doc) { c.innerHTML = ''; return; }
     c.innerHTML = query ? searchView(doc)
-      : view === 'notes' ? notesView(doc)
+      : view === 'today' ? todayView()
+        : view === 'board' ? boardView(doc)
+          : view === 'tags' ? tagsView(doc)
+            : view === 'notes' ? notesView(doc)
         : view === 'calendar' ? calendarView(doc)
           : view === 'journal' ? journalView(doc)
             : tasksView(doc);
@@ -219,6 +234,8 @@ import '../core/features.js';
       <div class="row-actions">
         <button class="ghost" data-act="add-list">${icon('plus', 16)} Добавить список</button>
         <button class="ghost" data-act="add-today">${icon('cal', 16)} Список на сегодня</button>
+        ${F().templates().length ? `<select class="tpl-select" data-tpl-apply aria-label="Создать список из шаблона">
+          <option value="">Из шаблона…</option>${F().templates().map((t) => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('')}</select>` : ''}
       </div>
       ${hidden ? `<p class="hint">Списков на другие дни: ${hidden}. <button class="link" data-act="go-cal">Открыть календарь</button></p>` : ''}`;
   }
@@ -246,12 +263,17 @@ import '../core/features.js';
     const t = doc.items[li.dataset.id];
     if (!t) return;
     if (t.done) {
-      t.done = false; t.doneAt = 0; S.put(doc, t); render();
+      t.done = false; t.doneAt = 0; t.status = 'todo'; S.put(doc, t); render();
       return;
     }
     const finish = () => {
-      t.done = true; t.doneAt = Date.now(); S.put(doc, t); render();
-      toast('Перенесено в «Сделано»', () => { t.done = false; t.doneAt = 0; S.put(doc, t); render(); });
+      // Повторяющаяся задача создаёт следующую; отмена убирает и её.
+      const next = F().completeTask(doc, t);
+      render();
+      toast('Перенесено в «Сделано»', () => {
+        if (next) S.remove(doc, next.id);
+        t.done = false; t.doneAt = 0; t.status = 'todo'; S.put(doc, t); render();
+      });
     };
     li.classList.add('is-done');
     if (reduced() || view !== 'tasks' || query) { setTimeout(finish, 150); return; }
@@ -340,9 +362,67 @@ import '../core/features.js';
     grip.addEventListener('pointercancel', up);
   }
 
+  // ---------- сегодня, доска, теги ----------
+  function todayView() {
+    const rows = F().todayAcrossSpaces(today());
+    if (!rows.length) return '<p class="empty">На сегодня задач с датой нет. Все дела по срокам выполнены.</p>';
+    return `<section class="list"><ul class="tasks">${rows.map((r) => `
+      <li class="task" data-id="${r.item.id}" data-space="${esc(r.space)}">
+        <button class="check" data-act="today-done" aria-label="Отметить выполненной">${icon('done', 14)}</button>
+        <div class="t-main">
+          <button class="t-body" data-act="today-open"><span class="t-title">${esc(r.item.title)}</span></button>
+          <div class="t-meta"><span class="chip ${r.late ? 'late' : 'now'}">${r.late ? 'просрочено' : 'сегодня'}</span><span class="chip quiet">${esc(r.spaceName)}</span></div>
+        </div>
+      </li>`).join('')}</ul></section>`;
+  }
+
+  function boardView(doc) {
+    const all = tasksOf(doc);
+    return `<div class="board">${F().STATUSES.map(([st, name]) => {
+      const rows = all.filter((t) => F().statusOf(t) === st).sort((a, b) => (a.order || 0) - (b.order || 0));
+      return `<section class="col"><header class="list-head"><h3>${name}</h3><span class="count">${rows.length}</span></header>
+        <ul class="cards">${rows.map((t) => `
+          <li class="card" data-id="${t.id}">
+            <button class="t-body" data-act="open">${esc(t.title)}</button>
+            <div class="card-move">
+              ${st !== 'todo' ? `<button class="icon-btn" data-act="move-status" data-to="${st === 'done' ? 'doing' : 'todo'}" aria-label="Назад">${icon('left', 14)}</button>` : ''}
+              ${st !== 'done' ? `<button class="icon-btn" data-act="move-status" data-to="${st === 'todo' ? 'doing' : 'done'}" aria-label="Дальше">${icon('right', 14)}</button>` : ''}
+            </div>
+          </li>`).join('')}</ul></section>`;
+    }).join('')}</div>`;
+  }
+
+  function tagsView(doc) {
+    const tags = F().allTags(doc);
+    if (!tags.length) return '<p class="empty">Тегов пока нет. Напиши в задаче или заметке #слово, например #сервер/доступы.</p>';
+    const chips = tags.map((t) => `<button class="chip-btn tagchip ${tagFilter === t.tag ? 'open' : ''}" data-act="tag" data-tag="${esc(t.tag)}">#${esc(t.tag)} <span class="count">${t.count}</span></button>`).join(' ');
+    let body = '<p class="hint">Выбери тег, чтобы увидеть задачи и заметки с ним.</p>';
+    if (tagFilter) {
+      const items = F().itemsWithTag(doc, tagFilter);
+      const tasks = items.filter((i) => i.type === 'task');
+      const notes = F().sortNotes(items.filter((i) => i.type === 'note'));
+      body = (tasks.length ? `<section class="list"><ul class="tasks">${tasks.map((t) => taskRow(t, { plain: true })).join('')}</ul></section>` : '')
+        + (notes.length ? `<div class="notes">${notes.map(noteCard).join('')}</div>` : '');
+    }
+    return `<div class="tagbar">${chips}</div>${body}`;
+  }
+
+  function noteCard(n) {
+    return `
+      <article class="note" data-id="${n.id}">
+        <button class="note-open" data-act="open-note">
+          <h3>${esc(n.title || 'Без названия')}</h3>
+          <p class="${isVault() ? 'veiled' : ''}">${esc((n.body || '').slice(0, 240))}</p>
+        </button>
+        <footer><span>${ago(n.updatedAt)}</span>
+          <button class="icon-btn ${n.pinned ? 'on' : ''}" data-act="pin-note" aria-label="${n.pinned ? 'Открепить' : 'Закрепить'}">${icon('star', 16)}</button>
+        </footer>
+      </article>`;
+  }
+
   // ---------- заметки ----------
   function notesView(doc) {
-    const notes = S.items(doc, 'note').sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    const notes = F().sortNotes(S.items(doc, 'note'));
     return `
       <div class="row-actions"><button class="btn primary" data-act="new-note">${icon('plus', 16)} Новая заметка</button></div>
       ${notes.length ? `<div class="notes">${notes.map((n) => `
@@ -372,6 +452,8 @@ import '../core/features.js';
     const byDay = {};
     open.forEach((t) => { (byDay[t.due] = byDay[t.due] || []).push(t); });
     const td = today();
+    const offList = MS.days.listDays(doc);
+    const offs = Object.fromEntries(offList.map((d) => [d.date, d.label]));
     let cells = '';
     for (let n = 0; n < 42; n++) {
       const d = new Date(y, m, 1 - offset + n);
@@ -384,7 +466,7 @@ import '../core/features.js';
         ...(byDay[s] || []).map((t) => `<span class="ev ${s < td ? 'late' : ''}" draggable="true" data-ev="${t.id}">${esc(t.title)}</span>`),
       ];
       cells += `
-        <div class="cell ${d.getMonth() !== m ? 'out' : ''} ${s === td ? 'today' : ''} ${s === calDay ? 'sel' : ''}" data-day="${s}" tabindex="0" role="button" aria-label="${longDay(d)}">
+        <div class="cell ${d.getMonth() !== m ? 'out' : ''} ${s === td ? 'today' : ''} ${s === calDay ? 'sel' : ''} ${offs[s] ? 'off' : ''}" data-day="${s}" tabindex="0" role="button" aria-label="${longDay(d)}${offs[s] ? ', нерабочий день' : ''}">
           <span class="num">${d.getDate()}</span>
           ${chips.slice(0, 3).join('')}
           ${chips.length > 3 ? `<span class="more">ещё ${chips.length - 3}</span>` : ''}
@@ -404,6 +486,21 @@ import '../core/features.js';
       </div>
       <div class="cal-week">${['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((d) => `<span>${d}</span>`).join('')}</div>
       <div class="cal-grid">${cells}</div>
+      <section class="offdays">
+        <header class="list-head"><h3>Нерабочие дни</h3><span class="count">${offList.length || ''}</span></header>
+        <div class="off-actions">
+          <button class="btn" data-act="off-toggle" data-day="${calDay}">${offs[calDay] ? 'Убрать выход: ' : 'Отметить выходным: '}${esc(calDay.split('-').reverse().join('.'))}</button>
+          <button class="btn" data-act="ics">${icon('copy', 16)} Скачать календарь (.ics)</button>
+        </div>
+        <form class="off-import" data-off-import>
+          <textarea name="text" rows="3" placeholder="15.10.2027 выход&#10;16.10.2027 выход" aria-label="Список дней: одна дата в строке"></textarea>
+          <button class="btn primary">Импортировать</button>
+        </form>
+        ${offList.length ? `<ul class="tasks">${offList.map((d) => `
+          <li class="task"><div class="t-main"><span class="t-title">${esc(d.date.split('-').reverse().join('.'))} — ${esc(d.label)}</span></div>
+            <button class="icon-btn" data-act="off-del" data-day="${d.date}" aria-label="Убрать день">${icon('x', 14)}</button></li>`).join('')}</ul>`
+          : '<p class="hint">Отмеченных дней пока нет. Отметь день в календаре или вставь список вида «15.10.2027 выход».</p>'}
+      </section>
       <h2 class="day-title">${longDay(parseD(calDay))}</h2>
       ${dayLists.map((l) => listSection(doc, l, allLists.length > 1)).join('')}
       ${dayTasks.length ? `
@@ -579,10 +676,13 @@ import '../core/features.js';
       <div class="fields">
         <label>Срок<input type="date" id="ts-due" value="${esc(t.due || '')}"></label>
         <label>Список<select id="ts-list">${lists.map((l) => `<option value="${l.id}" ${l.id === t.listId ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
+        <label>Повтор<select id="ts-repeat">${F().REPEATS.map(([v, n]) => `<option value="${v}" ${(t.repeat || '') === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       </div>
       <ul class="subs" id="ts-subs">${subsHtml()}</ul>
       <form class="add inline" id="ts-sub-add"><span class="add-plus">${icon('plus', 16)}</span><input name="t" placeholder="Добавить шаг" autocomplete="off" aria-label="Добавить шаг"></form>
       <textarea id="ts-note" rows="4" placeholder="Заметка к задаче">${esc(t.note || '')}</textarea>
+      ${F().linksOf(t.note).length ? `<div class="links">${F().linksOf(t.note).map((l) => `<a href="${esc(l)}" target="_blank" rel="noopener">${esc(l)}</a>`).join(' ')}</div>` : ''}
+      <details class="hist"><summary>История версий</summary><div id="ts-hist">${histHtml(doc, id)}</div></details>
       <div class="sheet-foot">
         <button class="btn danger" id="ts-del">${icon('trash', 16)} Удалить задачу</button>
         <span class="grow"></span>
@@ -612,6 +712,14 @@ import '../core/features.js';
         save();
         $('#ts-subs', sh).innerHTML = subsHtml();
       });
+      $('#ts-repeat', sh).addEventListener('change', (e) => { t.repeat = e.target.value; save(); });
+      $('#ts-hist', sh).addEventListener('click', (e) => {
+        const b = e.target.closest('[data-restore]');
+        if (!b) return;
+        S.restore(cur(), id, Number(b.dataset.restore));
+        toast('Версия возвращена');
+        taskSheet(id);
+      });
       $('#ts-del', sh).addEventListener('click', () => {
         const prev = S.remove(cur(), id);
         closeSheet();
@@ -620,18 +728,42 @@ import '../core/features.js';
     }, render);
   }
 
+  // Список версий элемента для окна: последние 20, с кнопкой «Вернуть».
+  function histHtml(doc, id) {
+    const list = MS.history.list(doc.id, id);
+    if (!list.length) return '<p class="hint">Версий пока нет. Они появятся после первых правок.</p>';
+    return list.slice(0, 20).map((v) => `
+      <div class="hist-row">
+        <span>${esc(new Date(v.t).toLocaleString('ru', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}
+          · ${esc(v.item.title || (v.item.body || '').slice(0, 40) || 'без названия')}</span>
+        <button class="btn" data-restore="${v.t}">Вернуть</button>
+      </div>`).join('');
+  }
+
   function noteSheet(id) {
     const doc = cur();
     let n = id ? doc.items[id] : null;
     const fresh = !n;
     if (fresh) n = { id: MS.uid(), type: 'note', title: '', body: '', createdAt: Date.now() };
     const save = () => { const d = cur(); if (d) S.put(d, n); };
+    const others = S.spaces().filter((d) => d.id !== MS.cfg.space);
+    const moveOpts = [...others.map((d) => `<option value="${d.id}">${esc(d.name)}</option>`),
+      MS.cfg.space !== MS.VAULT ? `<option value="${MS.VAULT}">Сейф</option>` : ''].join('');
     openSheet(`
       <input class="sheet-title" id="ns-title" value="${esc(n.title)}" placeholder="Название" ${fresh ? 'autofocus' : ''} aria-label="Название заметки">
-      <textarea id="ns-body" class="tall" rows="12" placeholder="Текст заметки">${esc(n.body)}</textarea>
+      <div class="seg note-mode" role="tablist">
+        <button class="on" data-mode="edit">Править</button><button data-mode="read">Читать</button>
+      </div>
+      <textarea id="ns-body" class="tall" rows="12" placeholder="Текст заметки. Можно Markdown: # заголовок, - список, **жирный**, [ссылка](https://...)">${esc(n.body)}</textarea>
+      <div class="md-view" id="ns-view" hidden></div>
+      ${fresh || !moveOpts ? '' : `<div class="move-row"><label>Перенести в<select id="ns-move">${moveOpts}</select></label>
+        <button class="btn" id="ns-move-go">Перенести</button></div>`}
+      <details class="hist"><summary>История версий</summary><div id="ns-hist">${fresh ? '' : histHtml(doc, n.id)}</div></details>
       <div class="sheet-foot">
         ${fresh ? '' : `<button class="btn danger" id="ns-del">${icon('trash', 16)} Удалить</button>`}
         <button class="btn" id="ns-copy">${icon('copy', 16)} Скопировать текст</button>
+        <button class="btn" id="ns-md">Скачать .md</button>
+        ${fresh ? '' : `<button class="btn ${n.pinned ? 'on' : ''}" id="ns-pin">${n.pinned ? 'Открепить' : 'Закрепить'}</button>`}
         <span class="grow"></span>
         <button class="btn primary" data-close>Готово</button>
       </div>`,
@@ -639,6 +771,34 @@ import '../core/features.js';
       $('#ns-title', sh).addEventListener('input', (e) => { n.title = e.target.value; save(); });
       $('#ns-body', sh).addEventListener('input', (e) => { n.body = e.target.value; save(); });
       $('#ns-copy', sh).addEventListener('click', () => copyText(n.body));
+      $('#ns-md', sh).addEventListener('click', () => download(`${n.title || 'заметка'}.md`, F().noteToMd(n), 'text/markdown'));
+      const pinBtn = $('#ns-pin', sh);
+      if (pinBtn) pinBtn.addEventListener('click', () => { F().togglePin(cur(), n.id); noteSheet(n.id); });
+      $$('[data-mode]', sh).forEach((b) => b.addEventListener('click', () => {
+        const read = b.dataset.mode === 'read';
+        $$('[data-mode]', sh).forEach((x) => x.classList.toggle('on', x === b));
+        $('#ns-body', sh).hidden = read;
+        $('#ns-view', sh).hidden = !read;
+        if (read) $('#ns-view', sh).innerHTML = F().mdToHtml($('#ns-body', sh).value) || '<p class="hint">Пока пусто.</p>';
+      }));
+      const mv = $('#ns-move-go', sh);
+      if (mv) mv.addEventListener('click', () => {
+        const to = $('#ns-move', sh).value;
+        const target = to === MS.VAULT ? (MS.vault && MS.vault.doc) : S.doc(to);
+        if (!target) { toast('Сначала откройте сейф'); return; }
+        F().moveItem(cur(), target, n.id);
+        closeSheet();
+        toast('Заметка перенесена');
+        render();
+      });
+      const hist = $('#ns-hist', sh);
+      if (hist) hist.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-restore]');
+        if (!b) return;
+        S.restore(cur(), n.id, Number(b.dataset.restore));
+        toast('Версия возвращена');
+        noteSheet(n.id);
+      });
       const del = $('#ns-del', sh);
       if (del) del.addEventListener('click', () => {
         const prev = S.remove(cur(), n.id);
@@ -708,6 +868,17 @@ import '../core/features.js';
     else document.documentElement.dataset.theme = id;
   }
 
+  function backupRows() {
+    const list = F().backupList();
+    if (!list.length) return '<p class="hint">Копий пока нет. Первая появится в ближайший запуск.</p>';
+    return list.map((b) => `<div class="hist-row"><span>${esc(b.date)}</span><button class="btn" data-bk="${esc(b.date)}">Вернуть</button></div>`).join('');
+  }
+  function templateRows() {
+    const list = F().templates();
+    if (!list.length) return '<p class="hint">Шаблонов пока нет.</p>';
+    return list.map((t) => `<div class="hist-row"><span>${esc(t.name)} · задач: ${t.lines.length}</span></div>`).join('');
+  }
+
   function settingsSheet() {
     const gh = MS.cfg.gh || {};
     openSheet(`
@@ -729,7 +900,21 @@ import '../core/features.js';
       <div class="sheet-foot">
         <button class="btn" id="exp">Скачать копию</button>
         <label class="btn file">Загрузить копию<input type="file" id="imp" accept="application/json,.json" hidden></label>
-      </div>`,
+      </div>
+      <h3>Копии за 7 дней</h3>
+      <p class="hint">Снимок данных делается раз в день на этом компьютере. Возврат заменяет текущие данные на этом компьютере.</p>
+      <div id="bk-list">${backupRows()}</div>
+      <h3>Шаблоны списков</h3>
+      <p class="hint">Шаблон создаёт список с задачами одним нажатием. Одна строка — одна задача.</p>
+      <form id="tpl-form">
+        <input name="name" placeholder="Название, например «Публикация статьи»" required autocomplete="off">
+        <textarea name="lines" rows="4" placeholder="Одна задача в строке"></textarea>
+        <div class="sheet-foot"><button class="btn primary">Сохранить шаблон</button></div>
+      </form>
+      <div id="tpl-list">${templateRows()}</div>
+      <h3>Экспорт работы</h3>
+      <p class="hint">Текущая работа в файл .md: задачи по спискам и заметки.</p>
+      <div class="sheet-foot"><button class="btn" id="md-space">Скачать работу в .md</button></div>`,
     (sh) => {
       $('#theme-grid', sh).addEventListener('click', (e) => {
         const b = e.target.closest('[data-theme-set]');
@@ -753,6 +938,26 @@ import '../core/features.js';
       });
       const off = $('#gh-off', sh);
       if (off) off.addEventListener('click', () => { delete MS.cfg.gh; S.saveCfg(); MS.sync.state.status = 'off'; closeSheet(); });
+      $('#bk-list', sh).addEventListener('click', (e) => {
+        const b = e.target.closest('[data-bk]');
+        if (!b) return;
+        if (!F().restoreBackup(b.dataset.bk)) { toast('Копия не найдена'); return; }
+        closeSheet(); render(); toast('Данные возвращены из копии');
+      });
+      $('#tpl-form', sh).addEventListener('submit', (e) => {
+        e.preventDefault();
+        const el = e.target.elements;
+        const name = el.name.value.trim();
+        if (!name) return;
+        F().saveTemplate(name, el.lines.value.split('\n'));
+        toast('Шаблон сохранён');
+        settingsSheet();
+      });
+      $('#md-space', sh).addEventListener('click', () => {
+        const doc = cur();
+        if (!doc) { toast('Откройте работу'); return; }
+        download(`${doc.name}.md`, F().spaceToMd(doc), 'text/markdown');
+      });
       $('#exp', sh).addEventListener('click', () => {
         download(`msync-${today()}.json`, JSON.stringify({ msync: 1, data: MS.data, vault: MS.vaultApi.blob() }, null, 2), 'application/json');
       });
@@ -808,6 +1013,15 @@ import '../core/features.js';
     $('.sidebar').addEventListener('click', (e) => {
       const ed = e.target.closest('[data-edit-space]');
       if (ed) { spaceSheet(ed.dataset.editSpace); return; }
+      const qi = e.target.closest('[data-quick-id]');
+      if (qi) {
+        const qdoc = S.doc(qi.dataset.quickSpace);
+        const item = qdoc && qdoc.items[qi.dataset.quickId];
+        MS.cfg.space = qi.dataset.quickSpace; S.saveCfg();
+        view = 'tasks'; query = ''; $('#search').value = ''; render();
+        if (item) { if (item.type === 'note') noteSheet(item.id); else taskSheet(item.id); }
+        return;
+      }
       const sp = e.target.closest('[data-space]');
       if (sp) {
         MS.cfg.space = sp.dataset.space;
@@ -844,6 +1058,28 @@ import '../core/features.js';
         const doc = cur();
         const li = act.closest('[data-id]');
         const a = act.dataset.act;
+        if (a === 'today-done' || a === 'today-open') {
+          const tdoc = S.doc(li.dataset.space);
+          const t = tdoc && tdoc.items[li.dataset.id];
+          if (!t) return;
+          if (a === 'today-open') {
+            MS.cfg.space = li.dataset.space; S.saveCfg(); view = 'tasks'; render();
+            taskSheet(t.id);
+          } else {
+            F().completeTask(tdoc, t); render(); toast('Отмечено выполненной');
+          }
+          return;
+        }
+        if (a === 'move-status') { F().setStatus(doc, doc.items[li.dataset.id], act.dataset.to); render(); return; }
+        if (a === 'tag') { tagFilter = tagFilter === act.dataset.tag ? '' : act.dataset.tag; renderMain(); return; }
+        if (a === 'pin-note') { F().togglePin(doc, li.dataset.id); render(); return; }
+        if (a === 'off-toggle') {
+          if (MS.days.listDays(doc).some((d) => d.date === act.dataset.day)) MS.days.removeDay(doc, act.dataset.day);
+          else MS.days.setDay(doc, act.dataset.day, 'выход');
+          render(); return;
+        }
+        if (a === 'off-del') { MS.days.removeDay(doc, act.dataset.day); render(); return; }
+        if (a === 'ics') { download(`${doc.name}.ics`, MS.days.toIcs(doc), 'text/calendar'); return; }
         if (a === 'toggle') toggleTask(li);
         else if (a === 'expand') {
           const id = li.dataset.id;
@@ -904,6 +1140,13 @@ import '../core/features.js';
       e.preventDefault();
       const f = e.target;
       if (f.dataset.gate) { submitGate(f); return; }
+      if (f.matches('[data-off-import]')) {
+        const r = MS.days.importText(cur(), f.elements.text.value);
+        const bad = r.bad.map((b) => b.line).join(', ');
+        toast(`Добавлено дней: ${r.added}` + (bad ? `. Не поняли строки ${bad}: проверьте дату` : ''));
+        render();
+        return;
+      }
       const doc = cur();
       const title = f.elements.title ? f.elements.title.value.trim() : '';
       if (!title) return;
@@ -935,6 +1178,15 @@ import '../core/features.js';
     });
 
     c.addEventListener('change', (e) => {
+      if (e.target.dataset.tplApply !== undefined) {
+        const name = e.target.value;
+        if (name) {
+          const list = F().applyTemplate(cur(), name);
+          if (list) { focusAfter = `[data-list="${list.id}"] input`; toast('Список создан из шаблона'); }
+          render();
+        }
+        return;
+      }
       const dateOf = e.target.dataset.listDate;
       if (dateOf) {
         const doc = cur();
@@ -1025,6 +1277,7 @@ import '../core/features.js';
 
   // ---------- запуск ----------
   S.init();
+  F().backupIfDue(today());
   bind();
   render();
   MS.sync.now();

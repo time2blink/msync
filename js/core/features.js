@@ -68,8 +68,8 @@ export function pinnedEverywhere() {
 // ---------- статусы (доска) ----------
 export const STATUSES = [['todo', 'Сделать'], ['doing', 'В работе'], ['done', 'Готово']];
 export function statusOf(t) {
-  if (t.status) return t.status;
-  return t.done ? 'done' : 'todo';
+  if (t.done) return 'done'; // отмеченная задача всегда «готово», что бы ни стояло в статусе
+  return t.status && t.status !== 'done' ? t.status : 'todo';
 }
 export function setStatus(doc, task, status) {
   task.status = status;
