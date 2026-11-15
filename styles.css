@@ -777,18 +777,23 @@ h1, h2, h3 { text-wrap: balance; }
 .cards { display: flex; flex-direction: column; gap: 0.5rem; }
 .card { background: var(--surface); border-radius: 12px; padding: 0.6rem 0.7rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .card .t-body { padding: 0; font-weight: 500; overflow-wrap: anywhere; }
-.card-move { display: flex; gap: 0.4rem; justify-content: space-between; flex-wrap: wrap; }
-/* Перенос между статусами: подписи вместо безымянных стрелок, видно куда задача уйдёт. */
-.move-btn {
-  display: inline-flex; align-items: center; gap: 0.3rem; height: 2rem; padding: 0 0.7rem;
-  border-radius: 999px; background: var(--hover); color: var(--text-2);
-  font-size: 0.85rem; font-weight: 600; line-height: 1; white-space: nowrap;
+/* Статус задачи: три сегмента, текущий выделен. Видно и где задача сейчас, и куда её можно перенести. */
+.status-seg {
+  display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--hover); align-self: flex-start;
+}
+.status-seg button {
+  min-height: 1.9rem; padding: 0 0.6rem; border-radius: 8px;
+  font-size: 0.8rem; font-weight: 500; color: var(--text-2); white-space: nowrap;
   transition: background-color 150ms ease, color 150ms ease, transform 150ms ease-out;
 }
-.move-btn .ico { width: 14px; height: 14px; }
-@media (hover: hover) { .move-btn:hover { background: var(--tint-strong); color: var(--accent-text); } }
-.move-btn:not(:disabled):active { transform: scale(0.96); }
-.move-btn:focus-visible { outline-offset: 2px; }
+@media (hover: hover) { .status-seg button:not(:disabled):hover { color: var(--text); } }
+.status-seg button:not(:disabled):active { transform: scale(0.96); }
+.status-seg button.on { background: var(--surface); color: var(--text); font-weight: 650; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+.status-seg button:disabled { cursor: default; }
+.status-seg button:focus-visible { outline-offset: 1px; }
+/* Пустая колонка: видно, что там ничего нет, и куда перетаскивать не нужно. */
+.cards:empty { min-height: 4.5rem; border-radius: 12px; border: 1px dashed var(--line); }
+.cards:empty::before { content: 'Пусто'; display: grid; place-items: center; height: 4.5rem; color: var(--text-3); font-size: 0.85rem; }
 @media (max-width: 760px) { .board { grid-template-columns: 1fr; } }
 
 .tagbar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }

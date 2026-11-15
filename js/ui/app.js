@@ -389,9 +389,8 @@ import '../core/time.js';
         <ul class="cards">${rows.map((t) => `
           <li class="card" data-id="${t.id}">
             <button class="t-body" data-act="open">${esc(t.title)}</button>
-            <div class="card-move">
-              ${st !== 'todo' ? `<button class="move-btn" data-act="move-status" data-to="${S[i - 1][0]}" aria-label="Вернуть в «${S[i - 1][1]}»">${icon('left', 14)}<span>${S[i - 1][1]}</span></button>` : ''}
-              ${st !== 'done' ? `<button class="move-btn" data-act="move-status" data-to="${S[i + 1][0]}" aria-label="Перенести в «${S[i + 1][1]}»"><span>${S[i + 1][1]}</span>${icon('right', 14)}</button>` : ''}
+            <div class="status-seg" role="group" aria-label="Статус задачи">
+              ${S.map(([to, name]) => `<button type="button" data-act="move-status" data-to="${to}" class="${to === st ? 'on' : ''}" aria-pressed="${to === st}" ${to === st ? 'disabled' : ''}>${name}</button>`).join('')}
             </div>
           </li>`).join('')}</ul></section>`;
     }).join('')}</div>`;
