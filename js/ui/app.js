@@ -687,10 +687,23 @@ import '../core/spring.js';
     }, render);
   }
 
+  // Тема: «auto» следует системной, светлая и тёмная фиксируются. Хранится в браузере, не в данных.
+  const THEMES = [['auto', 'Системная'], ['light', 'Светлая'], ['dark', 'Тёмная']];
+  const readTheme = () => { try { return localStorage.getItem('msync-theme') || 'auto'; } catch { return 'auto'; } };
+  function setTheme(id) {
+    try { if (id === 'auto') localStorage.removeItem('msync-theme'); else localStorage.setItem('msync-theme', id); } catch { /* без хранилища тема действует до перезагрузки */ }
+    if (id === 'auto') delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = id;
+  }
+
   function settingsSheet() {
     const gh = MS.cfg.gh || {};
     openSheet(`
       <h2>Настройки</h2>
+      <h3>Оформление</h3>
+      <div class="seg" id="theme-seg" role="group" aria-label="Тема оформления">
+        ${THEMES.map(([id, n]) => `<button type="button" class="${readTheme() === id ? 'on' : ''}" data-theme-set="${id}" aria-pressed="${readTheme() === id}">${n}</button>`).join('')}
+      </div>
       <h3>Синхронизация через GitHub</h3>
       <p class="hint">Нужен приватный репозиторий и токен fine-grained с доступом только к нему (право Contents: Read and write). Токен хранится в этом браузере.</p>
       <form id="gh-form">
@@ -706,6 +719,16 @@ import '../core/spring.js';
         <label class="btn file">Загрузить копию<input type="file" id="imp" accept="application/json,.json" hidden></label>
       </div>`,
     (sh) => {
+      $('#theme-seg', sh).addEventListener('click', (e) => {
+        const b = e.target.closest('[data-theme-set]');
+        if (!b) return;
+        setTheme(b.dataset.themeSet);
+        $$('[data-theme-set]', sh).forEach((x) => {
+          const on = x === b;
+          x.classList.toggle('on', on);
+          x.setAttribute('aria-pressed', String(on));
+        });
+      });
       $('#gh-form', sh).addEventListener('submit', (e) => {
         e.preventDefault();
         const el = e.target.elements;

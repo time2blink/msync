@@ -4,10 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MSync</title>
-<meta name="theme-color" content="#f3f4f6">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
+<script>
+  // Ручная тема (настройки): применяем до отрисовки, чтобы не мигала не та тема.
+  try {
+    var t = localStorage.getItem('msync-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch (e) { /* хранилища нет: тема по системе */ }
+</script>
 </head>
 <body>
 <div class="app">
