@@ -583,6 +583,16 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
   .content { padding-top: 1.25rem; }
 }
 
+/* Окно заметки: шире и фиксированной высоты, поле текста заполняет его, поэтому окно не прыгает вниз при наборе. */
+@media (min-width: 761px) {
+  .sheet:has(textarea.tall) {
+    width: min(48rem, calc(100vw - 2rem));
+    height: min(46rem, calc(100dvh - 2rem));
+    max-height: min(46rem, calc(100dvh - 2rem));
+  }
+  .sheet:has(textarea.tall) textarea.tall { flex: 1; min-height: 12rem; }
+}
+
 /* ---------- телефон ---------- */
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
