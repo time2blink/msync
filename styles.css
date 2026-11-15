@@ -730,7 +730,19 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
 /* ---------- выделение, каретка, прокрутка, перенос строк, цифры ---------- */
 ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); color: inherit; }
 input, textarea { caret-color: var(--accent); }
-html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+/* Полосы прокрутки везде (страница, шторка, поле заметки): цвет из текущей темы, поэтому виден на любой палитре.
+   Стандартные свойства работают в Chrome 121+ и Firefox, ::-webkit-* — для Safari и старых версий. */
+html, * {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text) 42%, transparent) transparent;
+}
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text) 42%, transparent);
+  border-radius: 999px; border: 3px solid transparent; background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 62%, transparent); background-clip: padding-box; }
 h1, h2, h3 { text-wrap: balance; }
 .hint, .empty, .note p, .gate p, .handoff textarea { text-wrap: pretty; }
 .count, .chip, .more, .num, .ev, .cal-week, .list-date, .handoff-at { font-variant-numeric: tabular-nums; }

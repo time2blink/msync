@@ -4,6 +4,7 @@ import '../core/crypto.js';
 import '../core/sync.js';
 import '../core/spring.js';
 import '../core/days.js';
+import '../core/features.js';
 // Интерфейс.
 
   const S = MS.store;
