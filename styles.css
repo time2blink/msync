@@ -621,6 +621,14 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
   .fields { grid-template-columns: 1fr; }
 }
 
+/* ---------- выделение, каретка, прокрутка, перенос строк, цифры ---------- */
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); color: inherit; }
+input, textarea { caret-color: var(--accent); }
+html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+h1, h2, h3 { text-wrap: balance; }
+.hint, .empty, .note p, .gate p, .handoff textarea { text-wrap: pretty; }
+.count, .chip, .more, .num, .ev, .cal-week, .list-date, .handoff-at { font-variant-numeric: tabular-nums; }
+
 /* ---------- доступность ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
