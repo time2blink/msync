@@ -784,6 +784,16 @@ import '../core/time.js';
       <div class="seg note-mode" role="tablist">
         <button class="on" data-mode="edit">Править</button><button data-mode="read">Читать</button>
       </div>
+      <div class="md-tools" id="ns-tools" role="toolbar" aria-label="Оформление текста">
+        <button type="button" data-md="bold" title="Жирный (Ctrl+B)"><b>B</b></button>
+        <button type="button" data-md="italic" title="Курсив (Ctrl+I)"><i>I</i></button>
+        <button type="button" data-md="h" title="Заголовок">H</button>
+        <button type="button" data-md="list" title="Список">•</button>
+        <button type="button" data-md="check" title="Чек-бокс">☐</button>
+        <button type="button" data-md="link" title="Ссылка">🔗</button>
+        <button type="button" data-md="code" title="Код">{ }</button>
+        <button type="button" data-md="wiki" title="Ссылка на заметку [[...]]">[[ ]]</button>
+      </div>
       <textarea id="ns-body" class="tall" rows="12" placeholder="Текст заметки. Можно Markdown: # заголовок, - список, **жирный**, [ссылка](https://...)">${esc(n.body)}</textarea>
       <div class="md-view" id="ns-view" hidden></div>
       ${fresh ? '' : `<div class="backlinks" id="ns-back">${backlinksHtml(doc, n)}</div>`}
@@ -810,6 +820,7 @@ import '../core/time.js';
         const read = b.dataset.mode === 'read';
         $$('[data-mode]', sh).forEach((x) => x.classList.toggle('on', x === b));
         $('#ns-body', sh).hidden = read;
+        $('#ns-tools', sh).hidden = read;
         $('#ns-view', sh).hidden = !read;
         if (read) renderView();
       }));
@@ -827,6 +838,34 @@ import '../core/time.js';
           });
         });
       }
+      // Панель оформления: оборачивает выделенный текст разметкой Markdown (сам текст остаётся текстом).
+      const ta = $('#ns-body', sh);
+      const applyMd = (kind) => {
+        const wrap = { bold: ['**', '**', 'текст'], italic: ['*', '*', 'текст'], link: ['[', '](https://)', 'текст'],
+          code: ['`', '`', 'код'], wiki: ['[[', ']]', 'название'] };
+        const line = { h: '## ', list: '- ', check: '- [ ] ' };
+        ta.focus();
+        if (line[kind]) {
+          const ls = ta.value.lastIndexOf('\n', ta.selectionStart - 1) + 1;
+          ta.setRangeText(line[kind], ls, ls, 'end');
+        } else {
+          const [pre, post, ph] = wrap[kind];
+          const s = ta.selectionStart, e = ta.selectionEnd;
+          const inner = ta.value.slice(s, e) || ph;
+          ta.setRangeText(pre + inner + post, s, e, 'select');
+          if (!ta.value.slice(s, e)) { ta.selectionStart = s + pre.length; ta.selectionEnd = s + pre.length + ph.length; }
+        }
+        n.body = ta.value; save();
+      };
+      $('#ns-tools', sh).addEventListener('click', (e) => {
+        const b = e.target.closest('[data-md]');
+        if (b) applyMd(b.dataset.md);
+      });
+      ta.addEventListener('keydown', (e) => {
+        if (!(e.ctrlKey || e.metaKey)) return;
+        if (e.key === 'b' || e.key === 'B') { e.preventDefault(); applyMd('bold'); }
+        if (e.key === 'i' || e.key === 'I') { e.preventDefault(); applyMd('italic'); }
+      });
       const imgBtn = $('#ns-img', sh);
       if (imgBtn) imgBtn.addEventListener('click', () => $('#ns-file', sh).click());
       const fileInput = $('#ns-file', sh);
