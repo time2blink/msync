@@ -783,7 +783,15 @@ h1, h2, h3 { text-wrap: balance; }
 .tagchip:not(:disabled):active { transform: scale(0.96); }
 .tagchip.open { background: var(--accent); color: #fff; }
 
-.cell.off { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); }
+/* Выходной: заметный фон и метка «вых» в углу, чтобы было видно и без цвета. */
+.cell.off { position: relative; background: color-mix(in srgb, var(--accent) 20%, var(--surface)); }
+.cell.off::before {
+  content: 'вых'; position: absolute; top: 0.4rem; right: 0.4rem; z-index: 1;
+  padding: 0 0.4rem; border-radius: 999px; font-size: 0.68rem; line-height: 1.25rem; font-weight: 600;
+  background: var(--accent); color: #fff;
+}
+.cell.off .num { color: var(--accent-text); font-weight: 600; }
+@media (max-width: 760px) { .cell.off::before { font-size: 0; width: 0.5rem; height: 0.5rem; padding: 0; top: 0.35rem; right: 0.35rem; } }
 .offdays { background: var(--surface); border-radius: 14px; padding: 0.8rem; margin: 0 0 1.4rem; }
 .off-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.7rem; }
 .off-import { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; }
