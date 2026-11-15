@@ -809,3 +809,12 @@ h1, h2, h3 { text-wrap: balance; }
 .md-view a { color: var(--accent-text); }
 .note-mode { align-self: flex-start; }
 .note-mode button.on { background: var(--accent); color: #fff; }
+
+.wikilink { color: var(--accent-text); background: var(--tint-strong); padding: 0 0.25rem; border-radius: 5px; text-decoration: none; }
+.backlinks { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.6rem; font-size: 0.9rem; }
+.backlinks .hint { margin: 0; }
+.toc { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.8rem; padding: 0.5rem 0.6rem; background: var(--hover); border-radius: 10px; }
+.toc-item { text-align: left; color: var(--text-2); padding: 0.15rem 0; font-size: 0.9rem; }
+.toc-item.l2 { padding-left: 0.8rem; }
+.toc-item.l3 { padding-left: 1.6rem; }
+.toc-item:hover { color: var(--accent-text); }

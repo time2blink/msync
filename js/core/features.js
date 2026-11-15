@@ -38,6 +38,40 @@ export function itemsWithTag(doc, tag) {
     tagsOf(it.title + ' ' + (it.note || '') + ' ' + (it.body || '')).some((x) => x === t || x.startsWith(t + '/')));
 }
 
+// ---------- ссылки между заметками и обратные ссылки ----------
+// [[название заметки]] — ссылка на другую заметку (или задачу) этой же работы.
+export function wikiLinksOf(text) {
+  return [...String(text || '').matchAll(/\[\[([^\]\n]+)\]\]/g)].map((m) => m[1].trim()).filter(Boolean);
+}
+
+// Найти элемент по названию (без учёта регистра). Сначала заметки, потом задачи.
+export function findByTitle(doc, title) {
+  const t = String(title).trim().toLowerCase();
+  const items = Object.values(doc.items).filter((it) => !it.deleted && (it.type === 'note' || it.type === 'task'));
+  return items.find((it) => it.type === 'note' && (it.title || '').trim().toLowerCase() === t)
+    || items.find((it) => (it.title || '').trim().toLowerCase() === t) || null;
+}
+
+// Что ссылается на элемент: заметки и задачи, где написано [[его название]].
+export function backlinksOf(doc, item) {
+  const t = (item.title || '').trim().toLowerCase();
+  if (!t) return [];
+  return Object.values(doc.items).filter((it) => {
+    if (it.deleted || it.id === item.id || (it.type !== 'note' && it.type !== 'task')) return false;
+    return wikiLinksOf(it.body || '').concat(wikiLinksOf(it.note || '')).some((x) => x.toLowerCase() === t);
+  });
+}
+
+// Оглавление: заголовки из Markdown, по порядку, с номером для перехода.
+export function headingsOf(src) {
+  const out = [];
+  String(src || '').split('\n').forEach((line) => {
+    const m = line.match(/^(#{1,3})\s+(.*)$/);
+    if (m) out.push({ level: m[1].length, text: m[2].trim(), id: 'h' + out.length });
+  });
+  return out;
+}
+
 export function linksOf(text) {
   return [...String(text || '').matchAll(/https?:\/\/[^\s)<>"]+/g)].map((m) => m[0]);
 }
@@ -147,12 +181,13 @@ export function spaceToMd(doc) {
 export function mdToHtml(src) {
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const inline = (s) => esc(s)
+    .replace(/\[\[([^\]\n]+)\]\]/g, '<a href="#" class="wikilink" data-wiki="$1">$1</a>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
   const out = [];
-  let list = false, code = false, para = [];
+  let list = false, code = false, para = [], headN = 0;
   const flushPara = () => { if (para.length) { out.push('<p>' + para.map(inline).join('<br>') + '</p>'); para = []; } };
   const closeList = () => { if (list) { out.push('</ul>'); list = false; } };
   for (const line of String(src || '').split('\n')) {
@@ -164,7 +199,11 @@ export function mdToHtml(src) {
     if (code) { out.push(esc(line) + '\n'); continue; }
     const h = line.match(/^(#{1,3})\s+(.*)$/);
     const li = line.match(/^\s*[-*]\s+(\[([ xX])\]\s+)?(.*)$/);
-    if (h) { flushPara(); closeList(); out.push(`<h${h[1].length + 2}>${inline(h[2])}</h${h[1].length + 2}>`); }
+    if (h) {
+      flushPara(); closeList();
+      const tag = `h${h[1].length + 2}`;
+      out.push(`<${tag} id="h${headN++}">${inline(h[2])}</${tag}>`);
+    }
     else if (li) {
       flushPara();
       if (!list) { out.push('<ul>'); list = true; }
@@ -244,7 +283,8 @@ export function restoreBackup(date) {
 }
 
 export const features = {
-  tagsOf, allTags, itemsWithTag, linksOf, togglePin, sortNotes, pinnedEverywhere,
+  tagsOf, allTags, itemsWithTag, linksOf, togglePin,
+  wikiLinksOf, findByTitle, backlinksOf, headingsOf, sortNotes, pinnedEverywhere,
   STATUSES, statusOf, setStatus, REPEATS, completeTask, moveItem,
   noteToMd, spaceToMd, mdToHtml, todayAcrossSpaces,
   templates, saveTemplate, applyTemplate, backupIfDue, backupList, restoreBackup,

@@ -61,7 +61,7 @@ const check = (n, ok, x = '') => res.push((ok ? 'PASS  ' : 'FAIL  ') + n + '  ' 
   await page.evaluate(() => document.querySelector('[data-mode="read"]').click());
   await sleep(100);
   const html = await page.evaluate(() => document.querySelector('#ns-view').innerHTML);
-  check('Markdown в режиме «Читать»: жирный, заголовок, ссылка', html.includes('<strong>жирный</strong>') && html.includes('<h3>') && html.includes('href="https://example.com"'));
+  check('Markdown в режиме «Читать»: жирный, заголовок, ссылка', html.includes('<strong>жирный</strong>') && html.includes('<h3 ') && html.includes('href="https://example.com"'));
   await page.evaluate(() => document.querySelector('#ns-pin').click());
   await sleep(150);
   check('закрепление из окна заметки работает', await page.evaluate(() => MS.store.doc('work-1').items.uinote.pinned === false));

@@ -740,6 +740,27 @@ import '../core/features.js';
       </div>`).join('');
   }
 
+  // Открыть заметку или задачу по id в текущей работе.
+  function openItem(id) {
+    const it = cur() && cur().items[id];
+    if (!it) return;
+    if (it.type === 'note') noteSheet(id); else taskSheet(id);
+  }
+  // Открыть по названию из [[...]]. Если такой заметки нет, создаём её.
+  function openTitle(title) {
+    const doc = cur();
+    if (!doc) return;
+    const found = F().findByTitle(doc, title);
+    if (found) { openItem(found.id); return; }
+    const n = S.put(doc, { id: MS.uid(), type: 'note', title, body: '', pinned: false });
+    noteSheet(n.id);
+  }
+  function backlinksHtml(doc, n) {
+    const refs = F().backlinksOf(doc, n);
+    if (!refs.length) return '<p class="hint">На эту заметку пока ничего не ссылается. Чтобы сослаться, напиши [[' + esc(n.title || 'название') + ']] в другой заметке.</p>';
+    return `<p class="hint">Ссылаются сюда:</p>` + refs.map((r) => `<button class="chip-btn" data-open-id="${r.id}">${esc(r.title || (r.body || '').slice(0, 30) || 'без названия')}</button>`).join(' ');
+  }
+
   function noteSheet(id) {
     const doc = cur();
     let n = id ? doc.items[id] : null;
@@ -756,6 +777,7 @@ import '../core/features.js';
       </div>
       <textarea id="ns-body" class="tall" rows="12" placeholder="Текст заметки. Можно Markdown: # заголовок, - список, **жирный**, [ссылка](https://...)">${esc(n.body)}</textarea>
       <div class="md-view" id="ns-view" hidden></div>
+      ${fresh ? '' : `<div class="backlinks" id="ns-back">${backlinksHtml(doc, n)}</div>`}
       ${fresh || !moveOpts ? '' : `<div class="move-row"><label>Перенести в<select id="ns-move">${moveOpts}</select></label>
         <button class="btn" id="ns-move-go">Перенести</button></div>`}
       <details class="hist"><summary>История версий</summary><div id="ns-hist">${fresh ? '' : histHtml(doc, n.id)}</div></details>
@@ -779,8 +801,27 @@ import '../core/features.js';
         $$('[data-mode]', sh).forEach((x) => x.classList.toggle('on', x === b));
         $('#ns-body', sh).hidden = read;
         $('#ns-view', sh).hidden = !read;
-        if (read) $('#ns-view', sh).innerHTML = F().mdToHtml($('#ns-body', sh).value) || '<p class="hint">Пока пусто.</p>';
+        if (read) renderView();
       }));
+      // Читать: оглавление сверху, ссылки [[...]] открываются, по оглавлению — переход к разделу.
+      function renderView() {
+        const body = $('#ns-body', sh).value;
+        const heads = F().headingsOf(body);
+        const toc = heads.length >= 2
+          ? `<nav class="toc" aria-label="Оглавление">${heads.map((h) => `<button class="toc-item l${h.level}" data-toc="${h.id}">${esc(h.text)}</button>`).join('')}</nav>` : '';
+        $('#ns-view', sh).innerHTML = (toc + F().mdToHtml(body)) || '<p class="hint">Пока пусто.</p>';
+      }
+      $('#ns-view', sh).addEventListener('click', (e) => {
+        const w = e.target.closest('.wikilink');
+        if (w) { e.preventDefault(); openTitle(w.dataset.wiki); return; }
+        const t = e.target.closest('[data-toc]');
+        if (t) { const el = document.getElementById(t.dataset.toc) || $('#ns-view', sh).querySelector('#' + t.dataset.toc); if (el) el.scrollIntoView({ block: 'start' }); }
+      });
+      const back = $('#ns-back', sh);
+      if (back) back.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-open-id]');
+        if (b) openItem(b.dataset.openId);
+      });
       const mv = $('#ns-move-go', sh);
       if (mv) mv.addEventListener('click', () => {
         const to = $('#ns-move', sh).value;
