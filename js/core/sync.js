@@ -1,5 +1,6 @@
 import { MS } from './state.js';
 import './store.js'; // порядок важен: sync читает MS.store при загрузке
+import './history.js';
 // Синхронизация с приватным репозиторием GitHub: по файлу на спейс + зашифрованный vault.json.
 
   const enc = new TextEncoder();
@@ -114,6 +115,15 @@ import './store.js'; // порядок важен: sync читает MS.store п
     return changed;
   }
 
+  // История спейса: файл history/<спейс>.json. Сейф пока хранит историю только на этом компьютере.
+  async function syncHistory(id) {
+    const path = `history/${id}.json`;
+    const remote = await getFile(path);
+    MS.history.mergeSpace(id, remote && remote.json);
+    const body = MS.history.exportSpace(id);
+    if (!remote || canon(body) !== canon(remote.json)) await putFile(path, body, remote ? remote.sha : null);
+  }
+
   async function run() {
     const listing = (await api('spaces')) || [];
     const remoteShas = {};
@@ -125,6 +135,9 @@ import './store.js'; // порядок важен: sync читает MS.store п
       if (await syncSpace(id, remoteShas[id])) changed = true;
     }
     if (await syncVault()) changed = true;
+    for (const id of Object.keys(MS.data.spaces)) {
+      if (!MS.data.spaces[id].deleted) await syncHistory(id);
+    }
     MS.store.saveData();
     MS.store.saveMeta();
     return changed;

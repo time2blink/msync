@@ -37,7 +37,7 @@ function runSuite(file) {
 
 server.listen(PORT, '127.0.0.1', async () => {
   let failed = false;
-  for (const suite of ['test.js', 'test2.js', 'test3.js', 'test4.js', 'test5.js', 'test6.js']) {
+  for (const suite of ['test.js', 'test2.js', 'test3.js', 'test4.js', 'test5.js', 'test6.js', 'test7.js']) {
     const { code, out } = await runSuite(suite);
     console.log(`\n== ${suite} ==\n${out}`);
     if (code !== 0 || /FAIL|CRASH/.test(out)) failed = true;

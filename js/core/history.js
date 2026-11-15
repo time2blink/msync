@@ -37,6 +37,28 @@ export const history = {
       .map((v) => ({ t: v.t, by: v.by, item: JSON.parse(v.snap) }));
   },
 
+  // Вся история спейса в виде, пригодном для файла на GitHub: { itemId: [{t, by, item}] }.
+  exportSpace(spaceId) {
+    const h = load(), prefix = spaceId + '/', out = {};
+    for (const [k, list] of Object.entries(h)) {
+      if (!k.startsWith(prefix)) continue;
+      out[k.slice(prefix.length)] = list.map((e) => ({ t: e.t, by: e.by, item: JSON.parse(e.snap) }));
+    }
+    return out;
+  },
+
+  // Слияние истории спейса с версией с GitHub. Записи с одинаковой меткой и компьютером считаются одной.
+  mergeSpace(spaceId, remote) {
+    const h = load(), prefix = spaceId + '/';
+    for (const [itemId, list] of Object.entries(remote || {})) {
+      const k = prefix + itemId;
+      const seen = new Map((h[k] || []).map((e) => [e.t + '|' + e.by, e]));
+      for (const e of list || []) seen.set(e.t + '|' + e.by, { t: e.t, by: e.by, snap: JSON.stringify(e.item) });
+      h[k] = [...seen.values()].sort((a, b) => a.t - b.t).slice(-LIMIT);
+    }
+    save(h);
+  },
+
   find(spaceId, itemId, t) {
     const v = (load()[spaceId + '/' + itemId] || []).find((e) => e.t === t);
     return v ? JSON.parse(v.snap) : null;

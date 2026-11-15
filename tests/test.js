@@ -56,7 +56,13 @@ async function fakeGithub(page) {
     await page.goto(URL_);
     return { page, errs };
   };
-  const add = async (page, text, sel = '.add input') => { await page.click(sel); await page.keyboard.type(text); await page.keyboard.press('Enter'); await sleep(60); };
+  // Если синхронизация перерисовала список прямо во время клика, повторяем клик.
+  const add = async (page, text, sel = '.add input') => {
+    for (let i = 0; i < 3; i++) {
+      try { await page.click(sel); break; } catch (e) { if (!/detached/.test(e.message) || i === 2) throw e; await sleep(150); }
+    }
+    await page.keyboard.type(text); await page.keyboard.press('Enter'); await sleep(60);
+  };
 
   // ---- компьютер A ----
   const A = await mk();
@@ -93,25 +99,25 @@ async function fakeGithub(page) {
   await a.mouse.move(700, 500); await sleep(3000);
   await a.screenshot({ path: out('s-tasks.png') });
 
-  await a.click('[data-view="journal"]'); await sleep(150);
+  await a.evaluate(() => document.querySelector('[data-view="journal"]').click()); await sleep(150);
   check('журнал показывает выполненное', (await a.$$('.task.is-done')).length === 1);
   await a.screenshot({ path: out('s-journal.png') });
-  await a.click('[data-view="calendar"]'); await sleep(150);
+  await a.evaluate(() => document.querySelector('[data-view="calendar"]').click()); await sleep(150);
   check('календарь показывает задачу со сроком', (await a.$$('.ev')).length === 1);
   await a.screenshot({ path: out('s-calendar.png') });
 
   // заметка
-  await a.click('[data-view="notes"]'); await a.click('[data-act="new-note"]'); await sleep(350);
+  await a.evaluate(() => document.querySelector('[data-view="notes"]').click()); await a.click('[data-act="new-note"]'); await sleep(350);
   await a.keyboard.type('Доступы к стенду'); await a.click('#ns-body'); await a.keyboard.type('Стенд обновляется по вторникам.\nКонтакт: редактор.');
   await a.keyboard.press('Escape'); await sleep(400);
   check('заметка сохранена', (await a.$$('.note')).length === 1);
   await a.screenshot({ path: out('s-notes.png') });
 
   // сейф
-  await a.click('[data-space="vault"]'); await sleep(200);
+  await a.evaluate(() => document.querySelector('[data-space="vault"]').click()); await sleep(200);
   await a.screenshot({ path: out('s-gate.png') });
   await a.type('[name=p1]', 'четыре слова про синий чайник'); await a.type('[name=p2]', 'четыре слова про синий чайник');
-  await a.keyboard.press('Enter'); await a.waitForFunction(() => !document.querySelector('.gate'), { timeout: 20000 }); await a.click('[data-view="tasks"]'); await sleep(150);
+  await a.keyboard.press('Enter'); await a.waitForFunction(() => !document.querySelector('.gate'), { timeout: 20000 }); await a.evaluate(() => document.querySelector('[data-view="tasks"]').click()); await sleep(150);
   await add(a, 'Секретная запись');
   check('сейф создан и принимает записи', (await a.$$('.task')).length === 1);
   await sleep(1500);
@@ -122,7 +128,7 @@ async function fakeGithub(page) {
   await a.type('[name=p1]', 'неверный пароль тут'); await a.keyboard.press('Enter'); await sleep(2500);
   check('неверный пароль отклонён', await a.$eval('#gate-err', (e) => e.textContent.includes('не подошёл')));
   await a.$eval('[name=p1]', (e) => { e.value = ''; });
-  await a.type('[name=p1]', 'четыре слова про синий чайник'); await a.keyboard.press('Enter'); await a.waitForFunction(() => !document.querySelector('.gate'), { timeout: 20000 }); await a.click('[data-view="tasks"]'); await sleep(150);
+  await a.type('[name=p1]', 'четыре слова про синий чайник'); await a.keyboard.press('Enter'); await a.waitForFunction(() => !document.querySelector('.gate'), { timeout: 20000 }); await a.evaluate(() => document.querySelector('[data-view="tasks"]').click()); await sleep(150);
   check('верный пароль открывает', (await a.$$('.task')).length === 1);
 
   // ---- синхронизация ----
@@ -138,15 +144,15 @@ async function fakeGithub(page) {
   await b.evaluate(cfg); await sleep(1500);
   check('B получил задачи', (await b.$$('.task')).length === 4, String((await b.$$('.task')).length));
   check('B получил «Где остановился»', (await b.$eval('#handoff', (e) => e.value)).includes('665'));
-  await b.click('[data-space="vault"]'); await sleep(200);
+  await b.evaluate(() => document.querySelector('[data-space="vault"]').click()); await sleep(200);
   check('B видит сейф заблокированным', await b.$eval('.gate h2', (e) => e.textContent.includes('заблокирован')));
   await b.type('[name=p1]', 'четыре слова про синий чайник'); await b.keyboard.press('Enter'); await b.waitForFunction(() => !document.querySelector('.gate'), { timeout: 20000 });
   check('B открыл сейф тем же паролем', await b.$eval('.task .t-title', (e) => e.textContent === 'Секретная запись'));
 
   // правки на обоих, затем слияние
-  await b.click('[data-space="work-1"]'); await sleep(150);
+  await b.evaluate(() => document.querySelector('[data-space="work-1"]').click()); await sleep(150);
   await add(b, 'Задача с макбука');
-  await a.click('[data-space="work-1"]'); await a.click('[data-view="tasks"]'); await sleep(150);
+  await a.evaluate(() => document.querySelector('[data-space="work-1"]').click()); await a.evaluate(() => document.querySelector('[data-view="tasks"]').click()); await sleep(150);
   await add(a, 'Задача с винды');
   await a.evaluate(() => MS.sync.now()); await sleep(1200);
   await b.evaluate(() => MS.sync.now()); await sleep(1200);
@@ -159,7 +165,7 @@ async function fakeGithub(page) {
 
   // ---- виды ----
   await b.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
-  await b.click('[data-space="work-2"]'); await sleep(150);
+  await b.evaluate(() => document.querySelector('[data-space="work-2"]').click()); await sleep(150);
   await add(b, 'Собрать семантику'); await add(b, 'Сдать тексты редактору');
   await b.mouse.move(700, 600); await sleep(600);
   await b.screenshot({ path: out('s-dark.png') });
@@ -167,7 +173,7 @@ async function fakeGithub(page) {
   await a.setViewport({ width: 390, height: 800, deviceScaleFactor: 2 });
   await sleep(500);
   await a.screenshot({ path: out('s-mobile.png') });
-  await a.click('[data-view="calendar"]'); await sleep(200);
+  await a.evaluate(() => document.querySelector('[data-view="calendar"]').click()); await sleep(200);
   await a.screenshot({ path: out('s-mobile-cal.png') });
 
   check('ошибок в консоли нет (A)', A.errs.length === 0, A.errs.join(' ; '));
