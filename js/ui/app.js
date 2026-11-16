@@ -791,6 +791,8 @@ import '../core/time.js';
     let n = id ? doc.items[id] : null;
     const fresh = !n;
     if (fresh) n = { id: MS.uid(), type: 'note', title: '', body: '', createdAt: Date.now() };
+    // Существующая заметка открывается на «Читать», новая — сразу на «Править».
+    const startRead = !fresh;
     const save = () => { const d = cur(); if (d) S.put(d, n); };
     const others = S.spaces().filter((d) => d.id !== MS.cfg.space);
     const moveOpts = [...others.map((d) => `<option value="${d.id}">${esc(d.name)}</option>`),
@@ -798,9 +800,9 @@ import '../core/time.js';
     openSheet(`
       <input class="sheet-title" id="ns-title" value="${esc(n.title)}" placeholder="Название" ${fresh ? 'autofocus' : ''} aria-label="Название заметки">
       <div class="seg note-mode" role="tablist">
-        <button class="on" data-mode="edit">Править</button><button data-mode="read">Читать</button>
+        <button role="tab" class="${startRead ? '' : 'on'}" aria-selected="${!startRead}" data-mode="edit">Править</button><button role="tab" class="${startRead ? 'on' : ''}" aria-selected="${startRead}" data-mode="read">Читать</button>
       </div>
-      <div class="md-tools" id="ns-tools" role="toolbar" aria-label="Оформление текста">
+      <div class="md-tools" id="ns-tools" role="toolbar" aria-label="Оформление текста" ${startRead ? 'hidden' : ''}>
         <button type="button" data-md="bold" aria-label="Жирный" title="Жирный (Ctrl+B)"><b>B</b></button>
         <button type="button" data-md="italic" aria-label="Курсив" title="Курсив (Ctrl+I)"><i>I</i></button>
         <button type="button" data-md="h" aria-label="Заголовок" title="Заголовок">H</button>
@@ -810,8 +812,8 @@ import '../core/time.js';
         <button type="button" data-md="code" aria-label="Код" title="Код">{ }</button>
         <button type="button" data-md="wiki" aria-label="Ссылка на заметку" title="Ссылка на заметку [[...]]">[[ ]]</button>
       </div>
-      <textarea id="ns-body" class="tall" rows="12" placeholder="Текст заметки. Можно Markdown: # заголовок, - список, **жирный**, [ссылка](https://...)">${esc(n.body)}</textarea>
-      <div class="md-view" id="ns-view" hidden></div>
+      <textarea id="ns-body" class="tall" rows="12" ${startRead ? 'hidden' : ''} placeholder="Текст заметки. Можно Markdown: # заголовок, - список, **жирный**, [ссылка](https://...)">${esc(n.body)}</textarea>
+      <div class="md-view" id="ns-view" ${startRead ? '' : 'hidden'}></div>
       ${fresh ? '' : `<div class="backlinks" id="ns-back">${backlinksHtml(doc, n)}</div>`}
       ${fresh || !moveOpts ? '' : `<div class="move-row"><label>Перенести в<select id="ns-move">${moveOpts}</select></label>
         <button class="btn" id="ns-move-go">Перенести</button></div>`}
@@ -834,7 +836,7 @@ import '../core/time.js';
       if (pinBtn) pinBtn.addEventListener('click', () => { F().togglePin(cur(), n.id); noteSheet(n.id); });
       $$('[data-mode]', sh).forEach((b) => b.addEventListener('click', () => {
         const read = b.dataset.mode === 'read';
-        $$('[data-mode]', sh).forEach((x) => x.classList.toggle('on', x === b));
+        $$('[data-mode]', sh).forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', String(x === b)); });
         $('#ns-body', sh).hidden = read;
         $('#ns-tools', sh).hidden = read;
         $('#ns-view', sh).hidden = !read;
@@ -854,6 +856,7 @@ import '../core/time.js';
           });
         });
       }
+      if (startRead) renderView();
       // Панель оформления: оборачивает выделенный текст разметкой Markdown (сам текст остаётся текстом).
       const ta = $('#ns-body', sh);
       const applyMd = (kind) => {

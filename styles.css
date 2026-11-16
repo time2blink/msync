@@ -506,6 +506,8 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
   transform: translate(-50%, -50%) scale(1);
   transition: opacity 200ms ease, transform 340ms var(--ease), filter 240ms ease, visibility 0s;
 }
+/* hidden всегда скрывает элемент, даже если у класса задан display (иначе панель оформления видна в режиме «Читать»). */
+[hidden] { display: none !important; }
 .sheet-x { position: absolute; right: 0.9rem; top: 0.9rem; }
 .sheet h2 { font-size: 1.35rem; letter-spacing: -0.022em; font-weight: 700; padding-right: 2rem; }
 .sheet h3 { font-size: 0.95rem; font-weight: 650; margin-top: 0.6rem; }
@@ -522,6 +524,9 @@ input[type='password'], .sheet input:not(.sheet-title):not([type='file']), .shee
 }
 .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .sheet-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.4rem; }
+/* Блоки окна не сжимаются: при длинном тексте окно прокручивается, а текст не наезжает на соседние блоки. */
+.sheet > * { flex-shrink: 0; }
+.sheet:has(textarea.tall) .md-view { flex: 1 0 auto; min-height: 12rem; }
 .subs:empty { display: none; }
 .sub { display: flex; align-items: center; gap: 0.2rem; }
 .sub > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
